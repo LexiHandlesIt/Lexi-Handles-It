@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lexi Handles It</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #2c2c2c;
+      font-family: sans-serif;
+    }
+
+    .page {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+
+    .page img {
+      width: 100%;
+      display: block;
+    }
+
+    .cta-overlay {
+      position: absolute;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: block;
+      border-radius: 8px;
+      text-decoration: none;
+
+      /* Uncomment to see button outlines while testing */
+      /* outline: 3px solid lime; */
+    }
+
+    .cta-overlay:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* PAGE 1 BUTTON - "Sort me out Lexi" */
+    .cta-page-1 {
+      left: 3.5%;
+      top: 67%;
+      width: 25%;
+      height: 12%;
+    }
+
+    /* PAGE 2 BUTTON - "Send me my free templates Lexi" */
+    .cta-page-2 {
+      left: 3.5%;
+      top: 79%;
+      width: 41%;
+      height: 9%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1 -->
+  <div class="page">
+    <img src="Page_1.png" alt="Lexi Handles It — You know your trade. Lexi's your upgrade.">
+    <!--
+      ★ REPLACE BOTH HREF VALUES WITH YOUR MAILCHIMP LINK ★
+    -->
+    <a
+      class="cta-overlay cta-page-1"
+      href="YOUR_MAILCHIMP_SIGNUP_LINK_HERE"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Sort me out Lexi — Send me my free templates"
+    ></a>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page">
+    <img src="Page_2.png" alt="Lexi Handles It — Coming Soon">
+    <a
+      class="cta-overlay cta-page-2"
+      href="YOUR_MAILCHIMP_SIGNUP_LINK_HERE"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Send me my free templates Lexi"
+    ></a>
+  </div>
+
+</body>
+</html>
