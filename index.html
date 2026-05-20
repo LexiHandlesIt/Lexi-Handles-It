@@ -59,7 +59,7 @@
             <option value="social">Scrolling my Social Media.</option>
             <option value="friend">A friend told me.</option>
             <option value="flyer">I saw your flyer.</option>
-            <option value="other">Other</option>
+            <option value="other">I was doing something else.</option>
           </select>
         </div>
 
@@ -128,9 +128,9 @@
     </div>
     <div class="header-right">
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
       </button>
       <img src="Lexi Profile.png" alt="Lexi" class="header-avatar" onerror="this.style.display='none'">
     </div>
@@ -140,7 +140,7 @@
   <div class="nav-menu" id="navMenu" aria-hidden="true">
     <button class="nav-menu-item" data-target="page3" id="menuNewQuote">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      New Quote
+      New Estimate or Quote
     </button>
     <button class="nav-menu-item" data-target="page1" id="menuEditBusiness">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -152,11 +152,33 @@
     </button>
     <button class="nav-menu-item" data-target="page4" id="menuSavedDocs">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      View Saved Documents
+      View Saved Jobs
       <span class="nav-menu-badge" id="savedBadge" style="display:none">0</span>
+    </button>
+    <button class="nav-menu-item" id="menuBackupRestore">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+      Backup &amp; Restore
+    </button>
+    <button class="nav-menu-item nav-menu-signout" id="menuSignOut">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
     </button>
   </div>
   <div class="nav-menu-overlay" id="navMenuOverlay"></div>
+
+  <!-- BACKUP & RESTORE MODAL -->
+  <div class="modal-overlay" id="backupRestoreModal" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-card backup-modal-card">
+      <button class="modal-close" id="closeBackupModal" aria-label="Close">&times;</button>
+      <h2 class="card-title" style="margin-bottom:8px">Backup &amp; Restore</h2>
+      <p class="card-desc" style="margin-bottom:20px">Export all your data (business details, price list and saved jobs) as a file, or restore from a previous backup.</p>
+      <div class="backup-modal-actions">
+        <button type="button" class="btn btn-outline" id="exportDataBtn2">⬇ Export Backup</button>
+        <button type="button" class="btn btn-outline" id="importDataBtn2">⬆ Import Backup</button>
+        <input type="file" id="importDataFile2" accept=".json" style="display:none" aria-hidden="true">
+      </div>
+    </div>
+  </div>
 
   <!-- MAIN CONTENT -->
   <main class="app-main">
@@ -164,8 +186,8 @@
     <!-- PAGE 1: BUSINESS SETUP -->
     <section id="page1" class="page active" data-page="1">
 <div class="page-header">
-        <h1 class="page-title"><span class="page-num">1.</span> Set Up Your Business</h1>
-        <p class="page-sub" style="text-align:center;">This takes a few minutes and only needs doing once.</p>
+        <h1 class="page-title" id="page1Title"><span class="page-num">1.</span> Set Up Your Business</h1>
+        <p class="page-sub" id="page1Sub" style="text-align:center;">This takes a few minutes and only needs doing once.</p>
       </div>
 
       <!-- About You -->
@@ -234,6 +256,7 @@
       <!-- Payment Methods -->
       <div class="card sage-focus">
         <h2 class="card-title">How Would You Like to Be Paid?</h2>
+        <p class="card-desc" style="margin-bottom:12px">Keeping your options open? Feel free to choose multiple payment methods.</p>
         <div class="pay-methods">
           <label class="checkbox-label">
             <input type="checkbox" id="payBankTransfer" value="bank"> Bank Transfer
@@ -242,21 +265,22 @@
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="bankAccHolder">Account Holder Name</label>
-                <input type="text" id="bankAccHolder" placeholder="Sam Clarke">
+                <input type="text" id="bankAccHolder">
               </div>
               <div class="form-group">
                 <label for="bankName">Bank Name</label>
-                <input type="text" id="bankName" placeholder="Barclays">
+                <input type="text" id="bankName">
               </div>
             </div>
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="bankSort">Sort Code</label>
-                <input type="text" id="bankSort" placeholder="12-34-56" maxlength="8">
+                <input type="text" id="bankSort" maxlength="8" inputmode="numeric">
+                <span class="field-error" id="bankSortError" style="display:none">Sort code must be 6 digits (XX-XX-XX)</span>
               </div>
               <div class="form-group">
                 <label for="bankAcc">Account Number</label>
-                <input type="text" id="bankAcc" placeholder="12345678" maxlength="8">
+                <input type="text" id="bankAcc" maxlength="8" inputmode="numeric">
               </div>
             </div>
           </div>
@@ -301,15 +325,36 @@
           <div class="colour-pickers">
             <div class="colour-picker-group">
               <label>Header</label>
-              <input type="color" id="colourHeader" value="#7D5730" class="colour-swatch">
+              <div class="colour-input-row">
+                <input type="color" id="colourHeader" value="#7D5730" class="colour-swatch">
+                <div class="rgb-inputs" id="rgbHeader" style="display:none">
+                  <label class="rgb-label">R <input type="number" id="colourHeaderR" class="rgb-input" min="0" max="255" value="125"></label>
+                  <label class="rgb-label">G <input type="number" id="colourHeaderG" class="rgb-input" min="0" max="255" value="87"></label>
+                  <label class="rgb-label">B <input type="number" id="colourHeaderB" class="rgb-input" min="0" max="255" value="48"></label>
+                </div>
+              </div>
             </div>
             <div class="colour-picker-group">
               <label>Accent</label>
-              <input type="color" id="colourAccent" value="#6B7C5C" class="colour-swatch">
+              <div class="colour-input-row">
+                <input type="color" id="colourAccent" value="#6B7C5C" class="colour-swatch">
+                <div class="rgb-inputs" id="rgbAccent" style="display:none">
+                  <label class="rgb-label">R <input type="number" id="colourAccentR" class="rgb-input" min="0" max="255" value="107"></label>
+                  <label class="rgb-label">G <input type="number" id="colourAccentG" class="rgb-input" min="0" max="255" value="124"></label>
+                  <label class="rgb-label">B <input type="number" id="colourAccentB" class="rgb-input" min="0" max="255" value="92"></label>
+                </div>
+              </div>
             </div>
             <div class="colour-picker-group">
               <label>Background</label>
-              <input type="color" id="colourBg" value="#F5F0E8" class="colour-swatch">
+              <div class="colour-input-row">
+                <input type="color" id="colourBg" value="#F5F0E8" class="colour-swatch">
+                <div class="rgb-inputs" id="rgbBg" style="display:none">
+                  <label class="rgb-label">R <input type="number" id="colourBgR" class="rgb-input" min="0" max="255" value="245"></label>
+                  <label class="rgb-label">G <input type="number" id="colourBgG" class="rgb-input" min="0" max="255" value="240"></label>
+                  <label class="rgb-label">B <input type="number" id="colourBgB" class="rgb-input" min="0" max="255" value="232"></label>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Right: live preview -->
@@ -340,17 +385,6 @@
         </div>
       </div>
 
-      <!-- Backup & Restore -->
-      <div class="card">
-        <h2 class="card-title">Backup &amp; Restore</h2>
-        <p class="card-desc">Export all your data (business details, price list and saved documents) as a file, or restore from a previous backup.</p>
-        <div class="backup-actions">
-          <button type="button" class="btn btn-outline" id="exportDataBtn">⬇ Export Backup</button>
-          <button type="button" class="btn btn-outline" id="importDataBtn">⬆ Import Backup</button>
-          <input type="file" id="importDataFile" accept=".json" style="display:none" aria-hidden="true">
-        </div>
-      </div>
-
       <!-- Page Footer -->
       <div class="page-footer">
         <button type="button" class="btn btn-primary btn-lg" id="saveBusinessBtn">Save My Business</button>
@@ -361,55 +395,73 @@
     <!-- PAGE 2: PRICE LIST -->
     <section id="page2" class="page" data-page="2">
       <div class="page-header">
-        <h1 class="page-title"><span class="page-num">2.</span> Build Your Price List</h1>
-        <p class="page-sub">Add the jobs you do most. You can always edit these later.</p>
+        <h1 class="page-title" id="page2Title"><span class="page-num">2.</span> Build Your Price List</h1>
+        <p class="page-sub" id="page2Sub">Add the jobs you do most. You can always edit these later.</p>
       </div>
 
       <!-- Add Jobs -->
       <div class="card sage-focus">
-        <h2 class="card-title">Add Jobs</h2>
-
-        <!-- CSV Upload -->
-        <div class="upload-zone" id="csvUploadZone" tabindex="0" role="button" aria-label="Upload CSV or text file">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Drag &amp; drop or tap to upload CSV / TXT</span>
-          <small>Format: Job name, price, one per line</small>
-          <button type="button" class="btn btn-sm btn-outline" id="downloadTemplateBtn" style="margin-top:8px">Download Template</button>
+        <div class="bulk-header-row">
+          <h2 class="card-title" style="margin-bottom:0">Build in Bulk</h2>
+          <span class="bulk-counter"><span id="bulkJobCount">0</span> Jobs Added</span>
         </div>
-        <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" aria-hidden="true">
 
-        <!-- Bulk Paste -->
-        <div class="form-group" style="margin-top:16px">
-          <label for="bulkPaste">Or paste jobs here (one per line: <em>Job name, price</em>)</label>
-          <textarea id="bulkPaste" rows="4" placeholder="Fit door handle, 45&#10;Hang door, 85&#10;Repair fence panel, 60"></textarea>
-          <button type="button" class="btn btn-sage btn-sm" id="parseBulkBtn" style="margin-top:8px">Add</button>
+        <div class="add-jobs-columns">
+          <!-- CSV Upload -->
+          <div class="add-jobs-col">
+            <div class="upload-zone" id="csvUploadZone" tabindex="0" role="button" aria-label="Upload CSV or text file">
+              <span>Drag &amp; drop or tap to upload</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <small>Format: Job name, price, one per line</small>
+            </div>
+            <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" aria-hidden="true">
+          </div>
+
+          <!-- Bulk Paste -->
+          <div class="add-jobs-col">
+            <div class="paste-zone">
+              <span class="paste-zone-label">Paste jobs here</span>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+              <small>(one per line: Job name, price)</small>
+              <textarea id="bulkPaste" placeholder="" class="paste-zone-textarea"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons row -->
+        <div class="add-jobs-btns">
+          <button type="button" class="btn btn-sm btn-outline" id="downloadTemplateBtn">Download Template</button>
+          <button type="button" class="btn btn-sage btn-sm" id="parseBulkBtn">Add</button>
         </div>
 
         <!-- Individual Add -->
         <div class="individual-add">
-          <h3 class="section-sub">Add Individually</h3>
-          <div class="form-grid-3">
-            <div class="form-group fg-grow">
+          <h3 class="card-title">Build One by One</h3>
+          <div class="obo-grid">
+            <div class="form-group obo-name">
               <label for="jobName">Job Name</label>
-              <input type="text" id="jobName" placeholder="e.g. Fit door handle">
+              <input type="text" id="jobName" placeholder="">
             </div>
-            <div class="form-group">
+            <div class="form-group obo-price">
               <label for="jobPrice">Price (£)</label>
-              <input type="number" id="jobPrice" placeholder="45" min="0" step="0.01">
+              <input type="number" id="jobPrice" placeholder="" min="0" step="0.01">
             </div>
-            <div class="form-group">
-              <label for="jobUnit">Unit <span class="hint">(optional)</span></label>
+            <div class="form-group obo-unit">
+              <label for="jobUnit">Per Unit <span class="hint">(optional)</span></label>
               <input type="text" id="jobUnit" placeholder="per room">
             </div>
+            <div class="obo-add">
+              <button type="button" class="btn btn-sage btn-sm" id="addJobBtn">Add</button>
+            </div>
           </div>
-          <button type="button" class="btn btn-sage" id="addJobBtn">Add</button>
         </div>
       </div>
 
       <!-- Price List -->
       <div class="card">
         <div class="card-header-row">
-          <h2 class="card-title">Your Price List <span class="badge" id="priceListBadge">0</span></h2>
+          <h2 class="card-title">Your Price List</h2>
+          <span class="bulk-counter"><span id="priceListBadge">0</span> Jobs Added</span>
         </div>
         <div class="price-list-toolbar">
           <input type="text" id="priceListSearch" placeholder="Search jobs..." class="search-input">
@@ -437,7 +489,7 @@
 
       <div class="page-footer">
         <button type="button" class="btn btn-outline btn-lg" id="backToSetupBtn">← Back to Setup</button>
-        <button type="button" class="btn btn-primary btn-lg btn-next" id="goToQuoteBtn"><span class="btn-step-num">3</span> New Quote</button>
+        <button type="button" class="btn btn-primary btn-lg btn-next" id="goToQuoteBtn"><span class="btn-step-num">3</span> New Estimate or Quote</button>
       </div>
     </section>
 
@@ -457,9 +509,9 @@
         </div>
         <div class="form-grid-cust-name" style="margin-top:12px">
           <div class="form-group">
-            <label for="custTitle">&nbsp;</label>
+            <label for="custTitle">Title</label>
             <select id="custTitle">
-              <option value="">Title</option>
+              <option value=""> </option>
               <option value="Mr">Mr</option>
               <option value="Mrs">Mrs</option>
               <option value="Ms">Ms</option>
@@ -503,19 +555,6 @@
             <input type="date" id="docDate">
           </div>
         </div>
-        <div class="form-group">
-          <label for="docValidFor">Valid For</label>
-          <select id="docValidFor">
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-            <option value="30" selected>30 days</option>
-            <option value="custom">Custom…</option>
-          </select>
-        </div>
-        <div class="form-group" id="validCustomGroup" style="display:none">
-          <label for="docValidCustom">Custom validity (days)</label>
-          <input type="number" id="docValidCustom" min="1" placeholder="60">
-        </div>
       </div>
 
       <!-- Step 2: Add Jobs -->
@@ -530,7 +569,6 @@
             <p>No jobs added yet.</p>
           </div>
         </div>
-        <!-- Custom item -->
         <div class="custom-item-add">
           <h3 class="section-sub">Add a one-off item</h3>
           <div class="form-grid-3">
@@ -547,7 +585,7 @@
               <input type="text" id="customItemUnit" placeholder="each">
             </div>
           </div>
-          <button type="button" class="btn btn-sage" id="addCustomItemBtn">Add</button>
+          <button type="button" class="btn btn-sage btn-sm" id="addCustomItemBtn">Add</button>
         </div>
       </div>
 
@@ -556,27 +594,48 @@
         <h2 class="card-title">Step 3: Totals &amp; Notes</h2>
         <div class="totals-block">
           <div class="totals-row"><span>Subtotal</span><span id="qSubtotal">£0.00</span></div>
-          <div class="totals-row">
-            <span>VAT</span>
-            <div class="vat-row">
-              <select id="vatSelect" class="vat-select">
-                <option value="0">0%</option>
-                <option value="5">5%</option>
-                <option value="20">20%</option>
-                <option value="custom">Custom</option>
-              </select>
-              <input type="number" id="vatCustom" min="0" max="100" step="0.1" placeholder="%" class="vat-custom" style="display:none">
-            </div>
-            <span id="qVatAmount">£0.00</span>
-          </div>
-          <div class="totals-row">
-            <span>Discount</span>
-            <div class="discount-row">
-              <input type="number" id="discountPct" min="0" max="100" step="0.5" placeholder="0" class="discount-input"> %
-            </div>
-            <span id="qDiscount">-£0.00</span>
-          </div>
           <div class="totals-row totals-total"><span>Total</span><span id="qTotal">£0.00</span></div>
+        </div>
+
+        <!-- Discount | VAT | Valid For — three columns -->
+        <div class="dvv-grid">
+          <div class="form-group" style="margin-bottom:0">
+            <label for="discountPct">Discount</label>
+            <select id="discountPct" class="vat-select">
+              <option value="0">0%</option>
+              <option value="5">5%</option>
+              <option value="10">10%</option>
+              <option value="20">20%</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="discountCustom" min="0" max="100" step="0.5" placeholder="%" class="vat-custom" style="display:none">
+            <span class="dvv-amount" id="qDiscount">-£0.00</span>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label for="vatSelect">VAT</label>
+            <select id="vatSelect" class="vat-select">
+              <option value="0">0%</option>
+              <option value="5">5%</option>
+              <option value="10">10%</option>
+              <option value="20">20%</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="vatCustom" min="0" max="100" step="0.1" placeholder="%" class="vat-custom" style="display:none">
+            <span class="dvv-amount" id="qVatAmount">£0.00</span>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label for="docValidFor">Valid For</label>
+            <select id="docValidFor">
+              <option value="7">7 days</option>
+              <option value="14" selected>14 days</option>
+              <option value="30">30 days</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="validCustomGroup" style="display:none;margin-top:8px">
+          <label for="docValidCustom">Custom validity (days)</label>
+          <input type="number" id="docValidCustom" min="1" placeholder="60">
         </div>
 
         <div class="form-group" style="margin-top:16px">
@@ -588,18 +647,19 @@
           <textarea id="quotePrivateNotes" rows="3" placeholder="Internal notes..."></textarea>
         </div>
 
-        <div class="form-group">
+        <!-- Terms & Conditions single column -->
+        <div style="margin-top:16px">
           <label>Terms &amp; Conditions</label>
           <div class="terms-options">
-            <label class="checkbox-label"><input type="checkbox" name="terms" value="payment30"> Payment due within 30 days of invoice date.</label>
-            <label class="checkbox-label"><input type="checkbox" name="terms" value="depositRequired"> A 50% deposit is required before work commences.</label>
-            <label class="checkbox-label"><input type="checkbox" name="terms" value="quotationValid"> This quotation is valid for 30 days from the date shown.</label>
-            <label class="checkbox-label"><input type="checkbox" name="terms" value="materialsExtra"> Materials are not included unless stated above.</label>
-            <label class="checkbox-label"><input type="checkbox" name="terms" value="cancellation"> Cancellation within 48 hours of scheduled start date may incur a charge.</label>
+            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="payment30"> Payment due within 30 days of invoice date.</label>
+            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="depositRequired"> A 50% deposit is required before work commences.</label>
+            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="quotationValid"> This quotation is valid for 30 days from the date shown.</label>
+            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="materialsExtra"> Materials are not included unless stated above.</label>
+            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="cancellation"> Cancellation within 48 hours of scheduled start date may incur a charge.</label>
           </div>
-          <div class="form-group" style="margin-top:8px">
-            <label for="customTerms">Additional terms</label>
-            <textarea id="customTerms" rows="2" placeholder="Any additional terms..."></textarea>
+          <div class="form-group" style="margin-top:12px">
+            <label for="customTerms">Additional Terms</label>
+            <textarea id="customTerms" rows="3" placeholder="Any additional terms..."></textarea>
           </div>
         </div>
       </div>
@@ -612,7 +672,7 @@
           <input type="text" id="authSig" placeholder="Your business name or your name">
         </div>
         <div class="form-group">
-          <label>Customer Signature</label>
+          <label>Authorised Signature <span class="hint">(draw or amend below)</span></label>
           <div class="sig-container">
             <canvas id="sigCanvas" class="sig-canvas" width="400" height="150"></canvas>
             <div class="sig-actions">
@@ -621,6 +681,7 @@
               <input type="text" id="custSigText" placeholder="Type to sign" class="sig-text-input">
             </div>
           </div>
+          <p class="sig-hint-text">Pre-filled from your name above — draw over or retype to amend.</p>
         </div>
       </div>
 
@@ -636,22 +697,29 @@
     <!-- PAGE 4: SAVED DOCUMENTS -->
     <section id="page4" class="page" data-page="4">
       <div class="page-header">
-        <h1 class="page-title">Saved Documents</h1>
+        <h1 class="page-title">Saved Jobs</h1>
       </div>
-      <div class="what-next-bar" id="whatNextBar" style="display:none">
-        <p class="what-next-label">What would you like to do next?</p>
-        <div class="what-next-btns">
-          <button class="btn btn-outline-sage what-next-btn" onclick="showPage('page1')">⚙ Edit My Setup</button>
-          <button class="btn btn-primary what-next-btn" onclick="prepareNewQuote(); showPage('page3')">✎ New Quote</button>
-          <button class="btn btn-outline-sage what-next-btn" onclick="document.getElementById('whatNextBar').style.display='none'">✕ Dismiss</button>
+      <!-- Nav hint popup (shown after first save) -->
+      <div class="nav-hint-popup" id="navHintPopup" style="display:none" role="dialog" aria-modal="true">
+        <button class="nav-hint-close" id="navHintClose" aria-label="Close">&#x2715;</button>
+        <div class="nav-hint-body">
+          <img src="Lexi with quote pointing up.png" alt="Lexi" class="nav-hint-avatar" onerror="this.style.display='none'">
+          <p class="nav-hint-msg">What would you like to do next? Use the menu above to explore everything Lexi can help you with.</p>
         </div>
+        <label class="nav-hint-suppress">
+          <input type="checkbox" id="navHintSuppress"> Do not show me this message again
+        </label>
       </div>
       <div class="saved-filter-bar">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="Estimate">Estimates</button>
-        <button class="filter-btn" data-filter="Quote">Quotes</button>
-        <button class="filter-btn" data-filter="invoiced">Invoiced</button>
-        <button class="filter-btn" data-filter="paid">Paid</button>
+        <label for="savedFilterSelect" class="saved-filter-label">Show:</label>
+        <select id="savedFilterSelect" class="saved-filter-select">
+          <option value="all">All</option>
+          <option value="Estimate">Estimates</option>
+          <option value="Quote">Quotes</option>
+          <option value="paid">Paid</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="accepted">Accepted</option>
+        </select>
       </div>
       <div id="savedDocsList" class="saved-docs-list">
         <div class="empty-state" id="savedDocsEmpty">
@@ -753,28 +821,30 @@
     </div>
   </div>
 
-  <!-- MARK PAID MODAL -->
-  <div id="markPaidModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Mark as Paid">
+  <!-- MONEY IN MODAL -->
+  <div id="markPaidModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Money In">
     <div class="modal-card modal-card-sm">
       <div class="modal-header">
-        <h2 class="modal-title">Mark as Paid</h2>
+        <h2 class="modal-title">Money In</h2>
         <button type="button" class="modal-close" id="closeMarkPaidBtn" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
+        <!-- Previous payment summary — shown only when partial payment exists -->
+        <div id="mpPrevInfo" class="mp-prev-info" style="display:none"></div>
         <div class="form-grid-2">
           <div class="form-group">
-            <label for="mpAmount">Amount Paid (£)</label>
+            <label for="mpAmount">Amount Received (£)</label>
             <input type="number" id="mpAmount" min="0" step="0.01" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label for="mpDate">Date Paid</label>
+            <label for="mpDate">Date Received</label>
             <input type="date" id="mpDate">
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" id="cancelMarkPaidBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="confirmMarkPaidBtn">Mark Paid</button>
+        <button type="button" class="btn btn-primary" id="confirmMarkPaidBtn">Money In</button>
       </div>
     </div>
   </div>

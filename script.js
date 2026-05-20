@@ -33,7 +33,7 @@ let state = {
     type: 'Estimate',
     custTitle: '', custFirstName: '', custLastName: '',
     custAddr: '', custPostcode: '', custPhone: '', custEmail: '',
-    date: '', validFor: '30', validCustom: '',
+    date: '', validFor: '14', validCustom: '',
     ref: '',
     items: [],
     vatRate: '0', vatCustom: '',
@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFromStorage();
   setupOnboarding();
   setupNavigation();
+  setupNavHint();
   setupPage1();
   setupPage2();
   setupPage3();
@@ -117,6 +118,49 @@ function toast(msg, type = '', duration = 3000) {
   }, duration);
 }
 
+function showSavedPopup(onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'saved-popup-overlay';
+  overlay.innerHTML = `
+    <div class="saved-popup-box">
+      <div class="saved-popup-tick">✓</div>
+      <div class="saved-popup-msg">Saved!</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.classList.add('fade-out');
+    setTimeout(() => {
+      overlay.remove();
+      if (onDone) onDone();
+    }, 350);
+  }, 1200);
+}
+
+const KEY_NAV_HINT = 'tq_nav_hint_suppressed';
+
+function showNavHint() {
+  if (localStorage.getItem(KEY_NAV_HINT)) return;
+  const popup = document.getElementById('navHintPopup');
+  if (popup) popup.style.display = 'block';
+}
+
+function setupNavHint() {
+  const popup    = document.getElementById('navHintPopup');
+  const closeBtn = document.getElementById('navHintClose');
+  const suppress = document.getElementById('navHintSuppress');
+  if (!popup || !closeBtn || !suppress) return;
+
+  closeBtn.addEventListener('click', () => {
+    if (suppress.checked) localStorage.setItem(KEY_NAV_HINT, '1');
+    popup.style.display = 'none';
+  });
+
+  suppress.addEventListener('change', () => {
+    if (suppress.checked) localStorage.setItem(KEY_NAV_HINT, '1');
+    else localStorage.removeItem(KEY_NAV_HINT);
+  });
+}
+
 /* ===== PAGE NAVIGATION ===== */
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -126,15 +170,72 @@ function showPage(pageId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // Update page1 title if business already set up
+  if (pageId === 'page1') {
+    const hasSetUp = (state.company.lastName || '').trim() !== '';
+    const p1Title = document.getElementById('page1Title');
+    const p1Sub   = document.getElementById('page1Sub');
+    if (p1Title) {
+      if (hasSetUp) {
+        p1Title.innerHTML = 'Edit My Business';
+      } else {
+        p1Title.innerHTML = '<span class="page-num">1.</span> Set Up Your Business';
+      }
+    }
+    if (p1Sub) {
+      if (hasSetUp) {
+        p1Sub.textContent = 'Brilliant, your business is progressing. Update your business details below.';
+        p1Sub.style.display = '';
+        p1Sub.style.textAlign = 'left';
+      } else {
+        p1Sub.textContent = 'This takes a few minutes and only needs doing once.';
+        p1Sub.style.display = '';
+        p1Sub.style.textAlign = '';
+      }
+    }
+  }
+
+  // Update page1 footer button based on whether price list exists
+  if (pageId === 'page1') {
+    updatePriceListBtn();
+  }
+
+  // Update page2 header based on whether price list already has content
+  if (pageId === 'page2') {
+    updatePage2Header();
+  }
+
   // Update page3 title after first save
   if (pageId === 'page3') {
     const hasSaved = state.saved.length > 0 || state.editingDocId;
     const titleEl = document.getElementById('page3Title');
     if (hasSaved) {
-      titleEl.textContent = 'New Quote';
+      titleEl.textContent = 'New Estimate or Quote';
     } else {
       titleEl.innerHTML = '<span class="page-num">3.</span> Create Estimate or Quote';
     }
+  }
+}
+
+function updatePriceListBtn() {
+  const btn = document.getElementById('goToPriceListBtn');
+  if (!btn) return;
+  if (state.priceList.length > 0) {
+    btn.innerHTML = 'Edit Price List';
+  } else {
+    btn.innerHTML = '<span class="btn-step-num">2</span> Add Price List';
+  }
+}
+
+function updatePage2Header() {
+  const title = document.getElementById('page2Title');
+  const sub   = document.getElementById('page2Sub');
+  if (state.priceList.length > 0) {
+    if (title) title.textContent = 'Edit Price List';
+    if (sub)   sub.style.display = 'none';
+  } else {
+    if (title) title.innerHTML = '<span class="page-num">2.</span> Build Your Price List';
+    if (sub) { sub.textContent = 'Add the jobs you do most. You can always edit these later.'; sub.style.display = ''; }
   }
 }
 
@@ -174,10 +275,33 @@ function setupNavigation() {
     });
   });
 
+  // Backup & Restore menu item
+  const backupBtn = document.getElementById('menuBackupRestore');
+  if (backupBtn) {
+    backupBtn.addEventListener('click', () => {
+      closeMenu();
+      document.getElementById('backupRestoreModal').style.display = 'flex';
+    });
+  }
+
+  // Sign Out
+  const signOutBtn = document.getElementById('menuSignOut');
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', () => {
+      closeMenu();
+      if (confirm('Sign out? Your saved jobs will remain on this device.')) {
+        localStorage.removeItem('tq_onboarded');
+        localStorage.removeItem('tq_pl_onboarded');
+        location.reload();
+      }
+    });
+  }
+
   // Page footer nav buttons
   document.getElementById('goToPriceListBtn').addEventListener('click', () => {
     saveBusinessDetails(false);
-    if (!localStorage.getItem(KEY_PL_ONBOARDED)) {
+    // Skip onboarding if they already have prices OR have seen it before
+    if (!localStorage.getItem(KEY_PL_ONBOARDED) && state.priceList.length === 0) {
       document.getElementById('plOnboardingModal').style.display = 'flex';
     } else {
       showPage('page2');
@@ -253,6 +377,20 @@ function setupPage1() {
   document.getElementById('payBankTransfer').addEventListener('change', e => {
     document.getElementById('bankDetails').style.display = e.target.checked ? 'block' : 'none';
   });
+
+  // Sort code auto-format: XX-XX-XX
+  document.getElementById('bankSort').addEventListener('input', function () {
+    const pos = this.selectionStart;
+    let digits = this.value.replace(/\D/g, '').slice(0, 6);
+    let formatted = digits;
+    if (digits.length > 4) formatted = digits.slice(0, 2) + '-' + digits.slice(2, 4) + '-' + digits.slice(4);
+    else if (digits.length > 2) formatted = digits.slice(0, 2) + '-' + digits.slice(2);
+    this.value = formatted;
+    // Restore cursor position (accounting for inserted hyphens)
+    const err = document.getElementById('bankSortError');
+    if (err) err.style.display = 'none';
+    this.classList.remove('error');
+  });
   document.getElementById('payPaypal').addEventListener('change', e => {
     document.getElementById('paypalDetails').style.display = e.target.checked ? 'block' : 'none';
   });
@@ -298,10 +436,16 @@ function setupPage1() {
   // Save button
   document.getElementById('saveBusinessBtn').addEventListener('click', () => saveBusinessDetails(true));
 
-  // Backup/restore
-  document.getElementById('exportDataBtn').addEventListener('click', exportData);
-  document.getElementById('importDataBtn').addEventListener('click', () => document.getElementById('importDataFile').click());
-  document.getElementById('importDataFile').addEventListener('change', importData);
+  // Backup/restore modal (from menu)
+  document.getElementById('exportDataBtn2').addEventListener('click', exportData);
+  document.getElementById('importDataBtn2').addEventListener('click', () => document.getElementById('importDataFile2').click());
+  document.getElementById('importDataFile2').addEventListener('change', importData);
+  document.getElementById('closeBackupModal').addEventListener('click', () => {
+    document.getElementById('backupRestoreModal').style.display = 'none';
+  });
+  document.getElementById('backupRestoreModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
 }
 
 function handleLogoUpload(e) {
@@ -376,6 +520,24 @@ function saveBusinessDetails(showToast = true) {
   }
   document.getElementById('p1LastName').classList.remove('error');
 
+  // Sort code validation: must be empty OR exactly 6 digits (XX-XX-XX)
+  const sortVal = getVal('bankSort').trim();
+  if (sortVal) {
+    const digits = sortVal.replace(/\D/g, '');
+    if (digits.length !== 6) {
+      const sortEl = document.getElementById('bankSort');
+      const sortErr = document.getElementById('bankSortError');
+      sortEl.classList.add('error');
+      if (sortErr) sortErr.style.display = 'block';
+      sortEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (showToast) toast('Sort code must be 6 digits.', 'error');
+      return false;
+    }
+    document.getElementById('bankSort').classList.remove('error');
+    const sortErr = document.getElementById('bankSortError');
+    if (sortErr) sortErr.style.display = 'none';
+  }
+
   const methods = [];
   if (document.getElementById('payBankTransfer').checked) methods.push('bank');
   if (document.getElementById('payCash').checked)         methods.push('cash');
@@ -410,9 +572,32 @@ function saveBusinessDetails(showToast = true) {
 }
 
 /* ===== COLOUR PICKER ===== */
+const RGB_PANEL_IDS = { header: 'rgbHeader', accent: 'rgbAccent', bg: 'rgbBg' };
+
+function closeAllRGBPanels() {
+  Object.values(RGB_PANEL_IDS).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
 function setupColourPicker(name, hexId, defaultVal) {
-  const hex = document.getElementById(hexId);
-  const rId = hexId + 'R', gId = hexId + 'G', bId = hexId + 'B';
+  const hex      = document.getElementById(hexId);
+  const rId      = hexId + 'R', gId = hexId + 'G', bId = hexId + 'B';
+  const panelId  = RGB_PANEL_IDS[name];
+
+  // Toggle RGB panel when the colour swatch is clicked
+  hex.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    closeAllRGBPanels();
+    if (!isOpen) {
+      panel.style.display = 'flex';
+      syncRGBfromHex(name);
+    }
+  });
 
   hex.addEventListener('input', () => {
     syncRGBfromHex(name);
@@ -426,6 +611,13 @@ function setupColourPicker(name, hexId, defaultVal) {
     });
   });
 }
+
+// Close RGB panels when tapping anywhere outside a swatch or panel
+document.addEventListener('click', (e) => {
+  const insidePanel = e.target.closest('.rgb-inputs');
+  const insideSwatch = e.target.classList.contains('colour-swatch');
+  if (!insidePanel && !insideSwatch) closeAllRGBPanels();
+});
 
 function colourIds(name) {
   const map = { header: 'colourHeader', accent: 'colourAccent', bg: 'colourBg' };
@@ -517,6 +709,35 @@ function setupPage2() {
     downloadTemplate();
   });
 
+  // Paste zone: accept text or screenshot image
+  document.getElementById('bulkPaste').addEventListener('paste', e => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const zone = document.querySelector('.paste-zone');
+          // Remove any existing preview
+          const old = zone.querySelector('.paste-img-preview');
+          if (old) old.remove();
+          // Create preview
+          const wrap = document.createElement('div');
+          wrap.className = 'paste-img-preview';
+          wrap.innerHTML = `<img src="${ev.target.result}" alt="Pasted price list">
+            <button type="button" class="paste-img-clear" aria-label="Remove image">&#x2715;</button>`;
+          zone.appendChild(wrap);
+          wrap.querySelector('.paste-img-clear').addEventListener('click', () => wrap.remove());
+        };
+        reader.readAsDataURL(file);
+        return; // image handled — stop checking items
+      }
+    }
+  });
+
   // Bulk paste
   document.getElementById('parseBulkBtn').addEventListener('click', () => {
     const text = getVal('bulkPaste');
@@ -530,7 +751,7 @@ function setupPage2() {
     } else if (skipped) {
       toast(`All jobs already in your list.`, 'error');
     } else {
-      toast('No valid jobs found. Format: Job name, price', 'error');
+      toast("Can't read your input — remember format: job, price", 'error');
     }
   });
 
@@ -578,7 +799,7 @@ function readCSV(file) {
     } else if (skipped) {
       toast('All jobs already in your list.', 'error');
     } else {
-      toast('No valid rows found. Format: Job name, price', 'error');
+      toast("Can't read your input — remember format: job, price", 'error');
     }
   };
   reader.readAsText(file);
@@ -588,16 +809,25 @@ function parseJobLines(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   let added = 0, skipped = 0;
   lines.forEach(line => {
+    let name, rest;
     const commaIdx = line.indexOf(',');
-    if (commaIdx === -1) return;
-    const name = line.slice(0, commaIdx).trim();
-    const rest = line.slice(commaIdx + 1).trim();
+    if (commaIdx !== -1) {
+      // Comma present: split on first comma
+      name = line.slice(0, commaIdx).trim();
+      rest = line.slice(commaIdx + 1).trim();
+    } else {
+      // No comma: find the last number (with optional currency symbol) at the end of the line
+      const noCommaMatch = line.match(/^(.*)\s+[£$€]?([\d]+(?:\.\d{1,2})?)\s*$/);
+      if (!noCommaMatch) { skipped++; return; }
+      name = noCommaMatch[1].trim();
+      rest = noCommaMatch[2];
+    }
     const priceMatch = rest.match(/[£$€]?([\d,]+(?:\.\d+)?)/);
-    if (!priceMatch) return;
+    if (!priceMatch) { skipped++; return; }
     const price = parseFloat(priceMatch[1].replace(/,/g, ''));
     const afterPrice = rest.slice(priceMatch.index + priceMatch[0].length).replace(/^\s*,\s*/, '').trim();
     const unit = afterPrice || '';
-    if (!name || isNaN(price)) return;
+    if (!name || isNaN(price)) { skipped++; return; }
     const duplicate = state.priceList.find(j => j.name.toLowerCase() === name.toLowerCase());
     if (duplicate) { skipped++; return; }
     addJob(name, price, unit);
@@ -681,6 +911,12 @@ function refreshPriceList() {
   const badge     = document.getElementById('priceListBadge');
 
   badge.textContent = state.priceList.length;
+  const bulkCount = document.getElementById('bulkJobCount');
+  if (bulkCount) bulkCount.textContent = state.priceList.length;
+
+  // Keep page1 button and page2 header in sync as the list changes
+  updatePriceListBtn();
+  updatePage2Header();
 
   // Remove job rows but keep #priceListEmpty so it is never destroyed by innerHTML
   Array.from(container.children).forEach(child => {
@@ -788,6 +1024,19 @@ function setupPage3() {
   // Job picker search
   document.getElementById('jobPickerSearch').addEventListener('input', () => updateJobPicker());
 
+  // Picker click — event delegation so it works after every innerHTML redraw
+  const pickerContainer = document.getElementById('jobPickerList');
+  pickerContainer.addEventListener('click', e => {
+    const item = e.target.closest('.pick-item');
+    if (item) addJobToQuote(item.dataset.jobId);
+  });
+  pickerContainer.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const item = e.target.closest('.pick-item');
+      if (item) { e.preventDefault(); addJobToQuote(item.dataset.jobId); }
+    }
+  });
+
   // Custom item
   document.getElementById('addCustomItemBtn').addEventListener('click', addCustomItem);
 
@@ -797,7 +1046,11 @@ function setupPage3() {
     recalcTotals();
   });
   document.getElementById('vatCustom').addEventListener('input', recalcTotals);
-  document.getElementById('discountPct').addEventListener('input', recalcTotals);
+  document.getElementById('discountPct').addEventListener('change', e => {
+    document.getElementById('discountCustom').style.display = e.target.value === 'custom' ? 'inline-block' : 'none';
+    recalcTotals();
+  });
+  document.getElementById('discountCustom').addEventListener('input', recalcTotals);
 
   // Signature canvas
   setupSignatureCanvas();
@@ -807,9 +1060,22 @@ function setupPage3() {
     if (getVal('custSigText')) clearCanvas();
   });
 
+  // Auto-populate sig text from authSig name field
+  document.getElementById('authSig').addEventListener('input', () => {
+    const sigText = document.getElementById('custSigText');
+    // Only pre-fill if the canvas is blank and the sig text hasn't been manually changed
+    if (!sigText.dataset.userEdited) {
+      sigText.value = document.getElementById('authSig').value;
+    }
+  });
+  document.getElementById('custSigText').addEventListener('input', () => {
+    document.getElementById('custSigText').dataset.userEdited = '1';
+  });
+
   document.getElementById('clearSigBtn').addEventListener('click', () => {
     clearCanvas();
     setVal('custSigText', '');
+    delete document.getElementById('custSigText').dataset.userEdited;
   });
 
   // Quote footer buttons
@@ -841,7 +1107,7 @@ function prepareNewQuote() {
     type: 'Estimate',
     custTitle: '', custFirstName: '', custLastName: '',
     custAddr: '', custPostcode: '', custPhone: '', custEmail: '',
-    date: todayStr(), validFor: '30', validCustom: '',
+    date: todayStr(), validFor: '14', validCustom: '',
     ref: buildRef(pendingRefNum),
     items: [],
     vatRate: '0', vatCustom: '',
@@ -851,11 +1117,18 @@ function prepareNewQuote() {
     authSig: '', custSig: '', sigDate: ''
   };
   state.editingDocId = null;
+  const saveBtn = document.getElementById('saveQuoteBtn');
+  if (saveBtn) saveBtn.textContent = '✓ Save';
   populateQuoteForm();
 }
 
 function loadQuoteFromDoc(doc) {
-  state.quote = { ...doc.quote };
+  const q = doc.quote || {};
+  state.quote = {
+    ...q,
+    // Deep-copy items so editing never mutates the stored doc's array
+    items: (q.items || []).map(i => ({ ...i }))
+  };
   populateQuoteForm();
 }
 
@@ -871,14 +1144,25 @@ function populateQuoteForm() {
   setVal('custEmail',     q.custEmail);
   setVal('docRef',        q.ref);
   setVal('docDate',       q.date || todayStr());
-  setVal('docValidFor',   q.validFor || '30');
+  setVal('docValidFor',   q.validFor || '14');
   setVal('docValidCustom',q.validCustom || '');
   setVal('quoteNotes',    q.notes);
   setVal('quotePrivateNotes', q.privateNotes);
   setVal('customTerms',   q.customTerms || '');
   setVal('authSig',       q.authSig || state.company.businessName || '');
   setVal('custSigText',   '');
-  setVal('discountPct',   q.discount || '0');
+  // Set discount select (backwards-compat: old docs stored any number, new ones use preset or 'custom')
+  const savedDisc = String(q.discount || '0');
+  const discPresets = ['0', '5', '10', '20'];
+  if (discPresets.includes(savedDisc)) {
+    document.getElementById('discountPct').value = savedDisc;
+    document.getElementById('discountCustom').style.display = 'none';
+    setVal('discountCustom', '');
+  } else {
+    document.getElementById('discountPct').value = 'custom';
+    setVal('discountCustom', savedDisc);
+    document.getElementById('discountCustom').style.display = 'inline-block';
+  }
   setVal('vatCustom',     q.vatCustom || '');
   document.getElementById('vatSelect').value = q.vatRate || '0';
   document.getElementById('vatCustom').style.display = q.vatRate === 'custom' ? 'inline-block' : 'none';
@@ -935,7 +1219,7 @@ function updateJobPicker() {
   }
 
   container.innerHTML = filtered.map(item => {
-    const quoteItem = state.quote.items.find(qi => qi.id === item.id || qi.name === item.name);
+    const quoteItem = (state.quote.items || []).find(qi => qi.id === item.id || qi.name === item.name);
     const inQuote = !!quoteItem;
     const qty = quoteItem ? quoteItem.qty : 0;
     return `
@@ -952,14 +1236,8 @@ function updateJobPicker() {
     `;
   }).join('');
 
-  container.querySelectorAll('.pick-item').forEach(el => {
-    const handler = () => addJobToQuote(el.dataset.jobId);
-    el.addEventListener('click', handler);
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
-    });
-  });
 }
+
 
 function addJobToQuote(jobId) {
   const job = state.priceList.find(j => j.id === jobId);
@@ -993,6 +1271,8 @@ function addCustomItem() {
 function renderQuoteItems() {
   const container = document.getElementById('quoteItemsContainer');
   const empty     = document.getElementById('quoteItemsEmpty');
+
+  if (!Array.isArray(state.quote.items)) state.quote.items = [];
 
   Array.from(container.children).forEach(child => {
     if (child !== empty) child.remove();
@@ -1039,10 +1319,11 @@ function renderQuoteItems() {
 }
 
 function recalcTotals() {
-  const subtotal  = state.quote.items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const subtotal  = (state.quote.items || []).reduce((s, i) => s + i.unitPrice * i.qty, 0);
   const vatSel    = document.getElementById('vatSelect').value;
   const vatRate   = vatSel === 'custom' ? parseFloat(getVal('vatCustom')) || 0 : parseFloat(vatSel) || 0;
-  const discPct   = parseFloat(getVal('discountPct')) || 0;
+  const discSel   = document.getElementById('discountPct').value;
+  const discPct   = discSel === 'custom' ? parseFloat(getVal('discountCustom')) || 0 : parseFloat(discSel) || 0;
   const discount  = subtotal * discPct / 100;
   const afterDisc = subtotal - discount;
   const vatAmt    = afterDisc * vatRate / 100;
@@ -1055,7 +1336,9 @@ function recalcTotals() {
 }
 
 function collectQuoteState() {
-  const vatSel = document.getElementById('vatSelect').value;
+  const vatSel  = document.getElementById('vatSelect').value;
+  const discSel = document.getElementById('discountPct').value;
+  const discount = discSel === 'custom' ? getVal('discountCustom') : discSel;
   const selectedTerms = [...document.querySelectorAll('[name="terms"]:checked')].map(cb => cb.value);
   return {
     type:          state.quote.type,
@@ -1073,7 +1356,7 @@ function collectQuoteState() {
     items:         [...state.quote.items],
     vatRate:       vatSel,
     vatCustom:     getVal('vatCustom'),
-    discount:      getVal('discountPct'),
+    discount:      discount,
     notes:         getVal('quoteNotes'),
     privateNotes:  getVal('quotePrivateNotes'),
     selectedTerms,
@@ -1086,6 +1369,8 @@ function collectQuoteState() {
 
 function saveQuote() {
   const q = collectQuoteState();
+  // Always use the live items array directly from state
+  q.items = [...state.quote.items];
   if (!q.custLastName && !q.custFirstName) {
     toast('Please add a customer name.', 'error');
     document.getElementById('custFirstName').focus();
@@ -1105,6 +1390,9 @@ function saveQuote() {
       };
     }
     state.editingDocId = null;
+    // Reset save button label
+    const saveBtn = document.getElementById('saveQuoteBtn');
+    if (saveBtn) saveBtn.textContent = '✓ Save';
   } else {
     state.saved.unshift({
       id: uid(),
@@ -1131,10 +1419,10 @@ function saveQuote() {
   save();
   updateSavedBadge();
   refreshSavedDocs();
-  toast('Quote saved!', 'success');
-  showPage('page4');
-  const wnBar = document.getElementById('whatNextBar');
-  if (wnBar) wnBar.style.display = 'block';
+  showSavedPopup(() => {
+    showPage('page4');
+    showNavHint();
+  });
 }
 
 function buildCustName(q) {
@@ -1205,31 +1493,29 @@ function getCanvasDataURL() {
 
 /* ===== PAGE 4 — SAVED DOCS ===== */
 function setupPage4() {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      refreshSavedDocs();
-    });
-  });
+  const sel = document.getElementById('savedFilterSelect');
+  if (sel) sel.addEventListener('change', () => refreshSavedDocs());
 }
 
 function refreshSavedDocs() {
-  const filterBtn = document.querySelector('.filter-btn.active');
-  const filter    = filterBtn ? filterBtn.dataset.filter : 'all';
+  const sel    = document.getElementById('savedFilterSelect');
+  const filter = sel ? sel.value : 'all';
   const container = document.getElementById('savedDocsList');
   const empty     = document.getElementById('savedDocsEmpty');
 
   let docs = [...state.saved];
-  if (filter === 'Estimate') docs = docs.filter(d => d.type === 'Estimate');
-  else if (filter === 'Quote') docs = docs.filter(d => d.type === 'Quote');
-  else if (filter === 'invoiced') docs = docs.filter(d => d.invoiceSent);
+  if      (filter === 'Estimate') docs = docs.filter(d => d.type === 'Estimate');
+  else if (filter === 'Quote')    docs = docs.filter(d => d.type === 'Quote');
   else if (filter === 'paid')     docs = docs.filter(d => d.paid);
+  else if (filter === 'unpaid')   docs = docs.filter(d => !d.paid);
+  else if (filter === 'accepted') docs = docs.filter(d => d.accepted);
 
-  container.innerHTML = '';
+  // Remove all doc cards but keep the empty-state element in the DOM
+  Array.from(container.children).forEach(child => {
+    if (child !== empty) child.remove();
+  });
 
   if (!docs.length) {
-    container.appendChild(empty);
     empty.style.display = 'flex';
     return;
   }
@@ -1237,9 +1523,10 @@ function refreshSavedDocs() {
 
   docs.forEach(doc => {
     const card = document.createElement('div');
-    const statusBadge = doc.paid ? 'paid' : doc.invoiceSent ? 'invoiced' : doc.type.toLowerCase();
+    const docType = doc.type || (doc.quote && doc.quote.type) || 'Estimate';
+    const statusBadge = doc.paid ? 'paid' : doc.invoiceSent ? 'invoiced' : docType.toLowerCase();
     card.className = `saved-doc-card status-${statusBadge}`;
-    const statusLabel = doc.paid ? 'Paid' : doc.invoiceSent ? 'Invoiced' : doc.type;
+    const statusLabel = doc.paid ? 'Paid' : doc.invoiceSent ? 'Invoiced' : docType;
 
     card.innerHTML = `
       <div class="saved-doc-header">
@@ -1254,17 +1541,25 @@ function refreshSavedDocs() {
       </div>
       <div class="journey-btns">
         <button type="button" class="journey-btn btn-send-quote" data-id="${doc.id}">
-          <span class="jb-circle">A</span> Send ${esc(doc.type)}
+          <span class="jb-circle">A</span> Send ${esc(docType)}
         </button>
         <button type="button" class="journey-btn btn-send-invoice" data-id="${doc.id}" ${!doc.invoiceSent && !doc.paid ? '' : ''}>
           <span class="jb-circle">B</span> Send Invoice
         </button>
-        <button type="button" class="journey-btn btn-send-receipt" data-id="${doc.id}" ${doc.paid ? '' : 'disabled'}>
+        <button type="button" class="journey-btn btn-send-receipt" data-id="${doc.id}">
           <span class="jb-circle">C</span> Send Receipt
         </button>
       </div>
       <div class="saved-doc-actions">
-        ${!doc.paid ? `<button type="button" class="btn btn-sm btn-outline btn-mark-paid" data-id="${doc.id}">✓ Mark Paid</button>` : `<span class="type-badge paid" style="margin-right:auto">Paid ${doc.paidDate ? formatDate(doc.paidDate) : ''}</span>`}
+        <div class="saved-doc-actions-left">
+          ${doc.paid
+            ? `<span class="type-badge paid">Paid ${doc.paidDate ? formatDate(doc.paidDate) : ''}</span>`
+            : doc.paidAmount > 0
+              ? `<span class="partial-paid-label">Paid ${fmtPrice(doc.paidAmount)} of ${fmtPrice(doc.total || 0)}</span>
+                 <button type="button" class="btn btn-sm btn-outline btn-mark-paid" data-id="${doc.id}">+ Money In</button>`
+              : `<button type="button" class="btn btn-sm btn-outline btn-mark-paid" data-id="${doc.id}">✓ Money In</button>`
+          }
+        </div>
         <button type="button" class="btn btn-sm btn-outline btn-edit-doc" data-id="${doc.id}">Edit</button>
         <button type="button" class="btn btn-sm btn-danger-outline btn-delete-doc" data-id="${doc.id}">Delete</button>
       </div>
@@ -1278,6 +1573,7 @@ function refreshSavedDocs() {
     card.querySelector('.btn-send-invoice').addEventListener('click', () => openInvoiceModal(doc.id));
     card.querySelector('.btn-send-receipt').addEventListener('click', () => {
       if (doc.paid) openReceiptModal(doc.id);
+      else toast('Record full payment first to send a receipt', 'info');
     });
     card.querySelector('.btn-mark-paid')?.addEventListener('click', () => openMarkPaid(doc.id));
     card.querySelector('.btn-edit-doc').addEventListener('click', () => editDoc(doc.id));
@@ -1288,9 +1584,15 @@ function refreshSavedDocs() {
 function editDoc(id) {
   state.editingDocId = id;
   const doc = state.saved.find(d => d.id === id);
-  if (!doc) return;
+  if (!doc) { state.editingDocId = null; return; }
   loadQuoteFromDoc(doc);
   showPage('page3');
+  // Update title to show this is an edit, not a new quote
+  const titleEl = document.getElementById('page3Title');
+  if (titleEl) titleEl.textContent = 'Edit ' + (doc.type || doc.quote?.type || 'Document');
+  // Update save button to reflect edit mode
+  const saveBtn = document.getElementById('saveQuoteBtn');
+  if (saveBtn) saveBtn.textContent = '✓ Save Changes';
 }
 
 function deleteDoc(id) {
@@ -1374,17 +1676,18 @@ function setupModals() {
     toast('Receipt sent!', 'success');
   });
 
-  // Mark Paid
+  // Money In
   document.getElementById('confirmMarkPaidBtn').addEventListener('click', () => {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
-    doc.paid       = true;
-    doc.paidAmount = parseFloat(getVal('mpAmount')) || doc.total || 0;
-    doc.paidDate   = getVal('mpDate') || todayStr();
+    const newPayment  = parseFloat(getVal('mpAmount')) || 0;
+    doc.paidAmount    = (doc.paidAmount || 0) + newPayment;
+    doc.paidDate      = getVal('mpDate') || todayStr();
+    doc.paid          = doc.paidAmount >= (doc.total || 0);
     save();
     refreshSavedDocs();
     document.getElementById('markPaidModal').style.display = 'none';
-    toast('Marked as paid!', 'success');
+    toast(doc.paid ? 'Fully paid — nice one!' : `Payment of ${fmtPrice(newPayment)} recorded.`, 'success');
   });
 }
 
@@ -1423,8 +1726,27 @@ function openReceiptModal(docId) {
 function openMarkPaid(docId) {
   activeDocId = docId;
   const doc = state.saved.find(d => d.id === docId);
-  setVal('mpAmount', doc ? doc.total.toFixed(2) : '');
-  setVal('mpDate',   todayStr());
+  if (!doc) return;
+
+  const total      = doc.total || 0;
+  const alreadyPaid = doc.paidAmount || 0;
+  const remaining  = Math.max(0, total - alreadyPaid);
+  const prevInfo   = document.getElementById('mpPrevInfo');
+
+  // Show previous payment summary if a partial payment already exists
+  if (alreadyPaid > 0 && prevInfo) {
+    prevInfo.style.display = 'block';
+    prevInfo.innerHTML = `
+      <div class="mp-prev-row"><span>Previously paid:</span><span><strong>${fmtPrice(alreadyPaid)}</strong>${doc.paidDate ? ' on ' + formatDate(doc.paidDate) : ''}</span></div>
+      <div class="mp-prev-row"><span>Still outstanding:</span><span><strong>${fmtPrice(remaining)}</strong></span></div>
+    `;
+  } else if (prevInfo) {
+    prevInfo.style.display = 'none';
+  }
+
+  // Pre-fill with remaining amount (or full total if no previous payment)
+  setVal('mpAmount', (remaining > 0 ? remaining : total).toFixed(2));
+  setVal('mpDate', todayStr());
   document.getElementById('markPaidModal').style.display = 'flex';
 }
 
@@ -1484,6 +1806,9 @@ const DOC_CSS = `
 
 function buildQuoteDoc() {
   const q = collectQuoteState();
+  // Always pull the live items from state — collectQuoteState may be called
+  // before the DOM is fully settled in some edge cases
+  q.items = [...state.quote.items];
   const tempDoc = {
     quote: q,
     company: { ...state.company },
@@ -1555,9 +1880,9 @@ function buildDocHtml(doc, docType, extra = {}) {
       <td>${esc(item.unit || '')}</td>
       <td style="text-align:right">${item.qty}</td>
       <td style="text-align:right">${fmtPrice(item.unitPrice)}</td>
-      <td>${fmtPrice(item.unitPrice * item.qty)}</td>
+      <td style="text-align:right">${fmtPrice(item.unitPrice * item.qty)}</td>
     </tr>
-  `).join('');
+  `).join('') || `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px 0;font-style:italic">No jobs added — go back and add jobs in Step 2</td></tr>`;
 
   const paymentSection = buildPaymentSection(co, docType);
   const termsSection   = buildTermsSection(q);
@@ -1636,7 +1961,7 @@ function buildDocHtml(doc, docType, extra = {}) {
 }
 
 function buildPaymentSection(co, docType) {
-  if (docType === 'receipt') return '';
+  if (docType !== 'invoice') return '';   // only show on invoices
   const methods = co.payMethods || [];
   let lines = [];
 
@@ -1668,20 +1993,20 @@ function buildTermsSection(q) {
 function buildSigSection(q, co, docType) {
   if (!q.authSig && !q.custSig && !getVal('custSigText')) return '';
   const authName = q.authSig || co.businessName || '';
-  const custSigContent = q.custSig
+  const authSigContent = q.custSig
     ? `<img src="${q.custSig}" class="sig-img">`
-    : (q.custSig === '' && document.getElementById('custSigText')?.value
+    : (document.getElementById('custSigText')?.value
         ? `<span class="sig-typed">${esc(document.getElementById('custSigText')?.value || '')}</span>`
         : '');
 
   return `
     <div class="sig-block">
       <div class="sig-box">
+        ${authSigContent}
         ${authName ? `<div style="font-size:0.9rem;font-weight:600">${esc(authName)}</div>` : ''}
         <div class="sig-label">Authorised Signature</div>
       </div>
       <div class="sig-box">
-        ${custSigContent}
         <div class="sig-label">Customer Signature &amp; Date</div>
       </div>
     </div>`;
