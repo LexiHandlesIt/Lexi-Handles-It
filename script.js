@@ -9,8 +9,10 @@ const KEY_PL   = 'tq_pl';
 const KEY_SAVED = 'tq_saved';
 const KEY_REF   = 'tq_refseq';
 const KEY_INV   = 'tq_invseq';
+const KEY_REC   = 'tq_recseq';
 const KEY_ONBOARDED    = 'tq_onboarded';
 const KEY_PL_ONBOARDED = 'tq_pl_onboarded';
+const KEY_PREVIEW_FIRST_SUPPRESSED = 'tq_preview_first_suppressed';
 
 /* ===== DEFAULT COLOURS ===== */
 const DEFAULT_COLOURS = { primary: '#7D5730', accent: '#6B7C5C', bg: '#F5F0E8' };
@@ -19,6 +21,7 @@ const DEFAULT_COLOURS = { primary: '#7D5730', accent: '#6B7C5C', bg: '#F5F0E8' }
 let state = {
   company: {
     firstName: '', lastName: '', businessName: '',
+    trade: '',
     phone: '', email: '', website: '', address: '', postcode: '',
     logo: '',
     payMethods: [],
@@ -50,6 +53,77 @@ let state = {
 let activeDocId = null;   // for invoice/receipt modals
 let editingJobId = null;  // tracks inline edit to prevent search from blowing it away
 let pendingRefNum = null; // ref number held in memory until quote is actually saved
+let pendingReceiptDocId = null;
+let pendingPreviewSend = null;
+let activePhotoDocId = null;
+let activeEditChoiceDocId = null;
+let activeCustomerGroup = null;   // group object while customer dashboard is open
+let receiptPreviewed = false;
+let quotePreviewed = false;
+let activeQuoteDraftDoc = null;
+let voiceRecogniser = null;
+let voiceRecording = false;
+/* ===== PAYMENT HELPERS ===== */
+// Returns doc.payments array, synthesising one entry from legacy paidAmount/paidDate if needed
+function getDocPayments(doc) {
+  // If doc.payments array exists and is authoritative, always use it (even if empty — empty means no payments)
+  if (Array.isArray(doc.payments)) return doc.payments;
+  // Legacy docs that only have paidAmount scalar
+  if (doc.paidAmount > 0) return [{ amount: doc.paidAmount, date: doc.paidDate || todayStr() }];
+  return [];
+}
+// Recalculates doc.paidAmount / doc.paid / doc.paidDate from doc.payments array
+function recalcDocPayments(doc) {
+  const payments = Array.isArray(doc.payments) ? doc.payments : [];
+  doc.payments   = payments;
+  doc.paidAmount = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  // Only mark paid if there is a real total > 0 AND paidAmount covers it
+  doc.paid       = doc.total > 0 && doc.paidAmount >= doc.total;
+  doc.paidDate   = payments.length ? payments[payments.length - 1].date : '';
+}
+
+function businessNameCompliment(name) {
+  return "I've saved your details.";
+}
+
+function traderFirstName() {
+  return (state.company.firstName || '').trim() || 'there';
+}
+
+function hasRequiredSetup() {
+  return (state.company.firstName || '').trim() !== '' &&
+         (state.company.lastName  || '').trim() !== '';
+}
+
+function requireSetupGuard() {
+  toast('Please enter your first and last name to continue.', 'error');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page1')?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const el = document.getElementById('p1FirstName');
+  if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('error'); }
+}
+
+function personaliseText() {
+  const first = traderFirstName();
+  const p1Sub = document.getElementById('page1Sub');
+  if (p1Sub && document.getElementById('page1')?.classList.contains('active')) {
+    const hasSetUp = (state.company.lastName || '').trim() !== '';
+    p1Sub.textContent = hasSetUp
+      ? `Brilliant ${first}, your business is progressing. Let's get your details up to date.`
+      : `So what's your trade? Tell me about your business so I can customise your documents.`;
+  }
+  const p3Sub = document.getElementById('page3Sub');
+  if (p3Sub) {
+    p3Sub.textContent = `Hey ${first}, who is this for?`;
+  }
+  const pageJobsSub = document.getElementById('pageJobsSub');
+  if (pageJobsSub) {
+    pageJobsSub.textContent = `What work are you quoting for, ${first}?`;
+  }
+  const savedTitle = document.getElementById('savedJobsTitle');
+  if (savedTitle) savedTitle.textContent = `${first}'s Saved Jobs`;
+}
 
 /* ===== INIT ===== */
 document.addEventListener('DOMContentLoaded', () => {
@@ -60,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPage1();
   setupPage2();
   setupPage3();
+  setupPageJobs();
+  setupPageCompletion();
   setupPage4();
   setupModals();
   updateSavedBadge();
@@ -70,13 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
   generateRef();
   updateJobPicker();
   updateColourPreview();
-  syncRGBfromHex('header');
-  syncRGBfromHex('accent');
-  syncRGBfromHex('bg');
   populateAuthSig();
+  personaliseText();
 
-  // Start on page1 (or wherever nav left off)
-  showPage('page1');
+  // If business is already set up, prepare a fresh quote and land on page 3
+  if (hasRequiredSetup()) {
+    prepareNewQuote();
+    showPage('page3');
+  } else {
+    showPage('page1');
+  }
+
 });
 
 /* ===== STORAGE ===== */
@@ -92,6 +172,12 @@ function loadFromStorage() {
   state.company   = lsGet(KEY_CO)    || state.company;
   state.priceList = lsGet(KEY_PL)    || [];
   state.saved     = lsGet(KEY_SAVED) || [];
+  // Migrate: ensure every price list item has an id
+  let needsSave = false;
+  state.priceList.forEach(j => {
+    if (!j.id) { j.id = uid(); needsSave = true; }
+  });
+  if (needsSave) ls(KEY_PL, state.priceList);
 }
 
 function ls(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
@@ -118,13 +204,13 @@ function toast(msg, type = '', duration = 3000) {
   }, duration);
 }
 
-function showSavedPopup(onDone) {
+function showSavedPopup(label, onDone, duration = 2500) {
   const overlay = document.createElement('div');
   overlay.className = 'saved-popup-overlay';
   overlay.innerHTML = `
     <div class="saved-popup-box">
       <div class="saved-popup-tick">✓</div>
-      <div class="saved-popup-msg">Saved!</div>
+      <div class="saved-popup-msg">${label || "I've saved that for you."}</div>
     </div>`;
   document.body.appendChild(overlay);
   setTimeout(() => {
@@ -133,7 +219,7 @@ function showSavedPopup(onDone) {
       overlay.remove();
       if (onDone) onDone();
     }, 350);
-  }, 1200);
+  }, duration);
 }
 
 const KEY_NAV_HINT = 'tq_nav_hint_suppressed';
@@ -141,6 +227,10 @@ const KEY_NAV_HINT = 'tq_nav_hint_suppressed';
 function showNavHint() {
   if (localStorage.getItem(KEY_NAV_HINT)) return;
   const popup = document.getElementById('navHintPopup');
+  const msg = popup?.querySelector('.nav-hint-msg');
+  if (msg) {
+    msg.innerHTML = `What would you like to do next ${traderFirstName()}? Use the menu <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;display:inline-block" aria-hidden="true"><circle cx="12" cy="5" r="2.5" fill="currentColor"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><circle cx="12" cy="19" r="2.5" fill="currentColor"/></svg> above to explore everything Lexi can help you with.`;
+  }
   if (popup) popup.style.display = 'block';
 }
 
@@ -163,6 +253,10 @@ function setupNavHint() {
 
 /* ===== PAGE NAVIGATION ===== */
 function showPage(pageId) {
+  if (pageId !== 'page1' && !hasRequiredSetup()) {
+    requireSetupGuard();
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById(pageId);
   if (pg) {
@@ -184,11 +278,11 @@ function showPage(pageId) {
     }
     if (p1Sub) {
       if (hasSetUp) {
-        p1Sub.textContent = 'Brilliant, your business is progressing. Update your business details below.';
+        p1Sub.textContent = `Brilliant ${traderFirstName()}, your business is progressing. Let's get your details up to date.`;
         p1Sub.style.display = '';
         p1Sub.style.textAlign = 'left';
       } else {
-        p1Sub.textContent = 'This takes a few minutes and only needs doing once.';
+        p1Sub.textContent = `So what's your trade? Tell me about your business so I can customise your documents.`;
         p1Sub.style.display = '';
         p1Sub.style.textAlign = '';
       }
@@ -205,14 +299,20 @@ function showPage(pageId) {
     updatePage2Header();
   }
 
-  // Update page3 title after first save
+  personaliseText();
+
+  // Update page3 title
   if (pageId === 'page3') {
-    const hasSaved = state.saved.length > 0 || state.editingDocId;
     const titleEl = document.getElementById('page3Title');
-    if (hasSaved) {
-      titleEl.textContent = 'New Estimate or Quote';
-    } else {
-      titleEl.innerHTML = '<span class="page-num">3.</span> Create Estimate or Quote';
+    if (titleEl) titleEl.textContent = 'Estimates and Quotes';
+  }
+
+  // Ensure signature preview is always populated when reaching the completion page
+  if (pageId === 'page-completion') {
+    const authSig = document.getElementById('authSig');
+    const custSigText = document.getElementById('custSigText');
+    if (authSig && custSigText && !custSigText.value && !custSigText.dataset.userEdited) {
+      custSigText.value = authSig.value;
     }
   }
 }
@@ -221,9 +321,9 @@ function updatePriceListBtn() {
   const btn = document.getElementById('goToPriceListBtn');
   if (!btn) return;
   if (state.priceList.length > 0) {
-    btn.innerHTML = 'Edit Price List';
+    btn.innerHTML = 'Edit My Price List';
   } else {
-    btn.innerHTML = '<span class="btn-step-num">2</span> Add Price List';
+    btn.innerHTML = 'Add Price List';
   }
 }
 
@@ -231,11 +331,14 @@ function updatePage2Header() {
   const title = document.getElementById('page2Title');
   const sub   = document.getElementById('page2Sub');
   if (state.priceList.length > 0) {
-    if (title) title.textContent = 'Edit Price List';
-    if (sub)   sub.style.display = 'none';
+    if (title) title.textContent = 'Edit My Price List';
+    if (sub) {
+      sub.textContent = `${traderFirstName()}, expanding your offer or focusing on a niche? Make sure you charge the price you deserve for your expertise.`;
+      sub.style.display = '';
+    }
   } else {
     if (title) title.innerHTML = '<span class="page-num">2.</span> Build Your Price List';
-    if (sub) { sub.textContent = 'Add the jobs you do most. You can always edit these later.'; sub.style.display = ''; }
+    if (sub) { sub.textContent = `${traderFirstName()}, add the jobs you do most. You can always edit these later.`; sub.style.display = ''; }
   }
 }
 
@@ -261,6 +364,7 @@ function setupNavigation() {
   }
 
   hamburger.addEventListener('click', () => {
+    if (!hasRequiredSetup()) { requireSetupGuard(); return; }
     navMenu.classList.contains('open') ? closeMenu() : openMenu();
   });
   overlay.addEventListener('click', closeMenu);
@@ -275,10 +379,38 @@ function setupNavigation() {
     });
   });
 
+  // New Invoice from menu
+  document.getElementById('menuNewInvoice')?.addEventListener('click', () => {
+    if (!hasRequiredSetup()) { requireSetupGuard(); return; }
+    closeMenu();
+    openClientPicker('invoice');
+  });
+
+  // New Receipt from menu
+  document.getElementById('menuNewReceipt')?.addEventListener('click', () => {
+    if (!hasRequiredSetup()) { requireSetupGuard(); return; }
+    closeMenu();
+    openClientPicker('receipt');
+  });
+
+
+  document.getElementById('menuBankDetails')?.addEventListener('click', () => {
+    if (!hasRequiredSetup()) { requireSetupGuard(); return; }
+    closeMenu();
+    openBankDetailsModal();
+  });
+
+  document.getElementById('menuShareLexi')?.addEventListener('click', () => {
+    if (!hasRequiredSetup()) { requireSetupGuard(); return; }
+    closeMenu();
+    shareLexiApp();
+  });
+
   // Backup & Restore menu item
   const backupBtn = document.getElementById('menuBackupRestore');
   if (backupBtn) {
     backupBtn.addEventListener('click', () => {
+      if (!hasRequiredSetup()) { requireSetupGuard(); return; }
       closeMenu();
       document.getElementById('backupRestoreModal').style.display = 'flex';
     });
@@ -299,7 +431,7 @@ function setupNavigation() {
 
   // Page footer nav buttons
   document.getElementById('goToPriceListBtn').addEventListener('click', () => {
-    saveBusinessDetails(false);
+    if (!saveBusinessDetails(false)) return;
     // Skip onboarding if they already have prices OR have seen it before
     if (!localStorage.getItem(KEY_PL_ONBOARDED) && state.priceList.length === 0) {
       document.getElementById('plOnboardingModal').style.display = 'flex';
@@ -315,6 +447,20 @@ function setupNavigation() {
   });
   document.getElementById('goToQuoteBtn').addEventListener('click', () => {
     showPage('page3');
+  });
+  document.getElementById('saveCustomerGoToJobsBtn')?.addEventListener('click', () => {
+    const first = (getVal('custFirstName') || '').trim();
+    const last  = (getVal('custLastName')  || '').trim();
+    if (!first && !last) {
+      toast('Please enter the customer\'s first or last name.', 'error');
+      document.getElementById('custFirstName').focus();
+      return;
+    }
+    showPage('page-jobs');
+    setVal('jobPickerSearch', '');
+    updateJobPicker();
+    renderQuoteItems();
+    setTimeout(() => document.getElementById('jobPickerSearch')?.focus(), 300);
   });
   document.getElementById('backToSetupBtn').addEventListener('click', () => showPage('page1'));
   document.getElementById('createFirstQuoteBtn')?.addEventListener('click', () => {
@@ -458,6 +604,7 @@ function handleLogoUpload(e) {
     state.company.logo = ev.target.result;
     showLogoState();
     save();
+    showSavedPopup("Great Logo, you'll really stand out", null, 5000);
   };
   reader.readAsDataURL(file);
 }
@@ -474,11 +621,12 @@ function populatePage1Fields() {
   setVal('p1FirstName',    c.firstName);
   setVal('p1LastName',     c.lastName);
   setVal('p1BusinessName', c.businessName);
+  setVal('p1Address',      c.address);
+  setVal('p1Postcode',     c.postcode);
   setVal('p1Phone',        c.phone);
   setVal('p1Email',        c.email);
   setVal('p1Website',      c.website);
-  setVal('p1Address',      c.address);
-  setVal('p1Postcode',     c.postcode);
+  setVal('p1Trade',        c.trade || '');
 
   showLogoState();
 
@@ -511,7 +659,15 @@ function populatePage1Fields() {
 }
 
 function saveBusinessDetails(showToast = true) {
+  const firstName = getVal('p1FirstName').trim();
   const lastName = getVal('p1LastName').trim();
+  if (!firstName) {
+    document.getElementById('p1FirstName').classList.add('error');
+    document.getElementById('p1FirstName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (showToast) toast('First name is required.', 'error');
+    return false;
+  }
+  document.getElementById('p1FirstName').classList.remove('error');
   if (!lastName) {
     document.getElementById('p1LastName').classList.add('error');
     document.getElementById('p1LastName').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -538,6 +694,11 @@ function saveBusinessDetails(showToast = true) {
     if (sortErr) sortErr.style.display = 'none';
   }
 
+  const colourChanged =
+    (state.company.brandPrimary || DEFAULT_COLOURS.primary) !== document.getElementById('colourHeader').value ||
+    (state.company.brandAccent  || DEFAULT_COLOURS.accent)  !== document.getElementById('colourAccent').value ||
+    (state.company.brandBg      || DEFAULT_COLOURS.bg)      !== document.getElementById('colourBg').value;
+
   const methods = [];
   if (document.getElementById('payBankTransfer').checked) methods.push('bank');
   if (document.getElementById('payCash').checked)         methods.push('cash');
@@ -546,14 +707,15 @@ function saveBusinessDetails(showToast = true) {
 
   state.company = {
     ...state.company,
-    firstName:    getVal('p1FirstName'),
+    firstName:    firstName,
     lastName:     lastName,
     businessName: getVal('p1BusinessName'),
+    trade:        getVal('p1Trade'),
+    address:      getVal('p1Address'),
+    postcode:     getVal('p1Postcode'),
     phone:        getVal('p1Phone'),
     email:        getVal('p1Email'),
     website:      getVal('p1Website'),
-    address:      getVal('p1Address'),
-    postcode:     getVal('p1Postcode'),
     payMethods:   methods,
     bankAccHolder: getVal('bankAccHolder'),
     bankName:     getVal('bankName'),
@@ -567,99 +729,222 @@ function saveBusinessDetails(showToast = true) {
   };
   save();
   updateColourPreview();
-  if (showToast) toast('Business details saved!', 'success');
+  personaliseText();
+  if (showToast) showSavedPopup(
+    businessNameCompliment(getVal('p1BusinessName') || (firstName + ' ' + lastName)),
+    null,
+    2500
+  );
   return true;
 }
 
 /* ===== COLOUR PICKER ===== */
-const RGB_PANEL_IDS = { header: 'rgbHeader', accent: 'rgbAccent', bg: 'rgbBg' };
-
-function closeAllRGBPanels() {
-  Object.values(RGB_PANEL_IDS).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
+// HSV helpers
+function hsvToRgb(h, s, v) {
+  const i = Math.floor(h / 60) % 6;
+  const f = h / 60 - Math.floor(h / 60);
+  const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  const [r, g, b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
+  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+}
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  return { h: h * 360, s: max ? d / max : 0, v: max };
 }
 
 function setupColourPicker(name, hexId, defaultVal) {
-  const hex      = document.getElementById(hexId);
-  const rId      = hexId + 'R', gId = hexId + 'G', bId = hexId + 'B';
-  const panelId  = RGB_PANEL_IDS[name];
+  const hexEl = document.getElementById(hexId);
+  if (!hexEl) return;
+  // Always use our custom picker — same UI on every device
+  hexEl.addEventListener('pointerdown', e => { e.preventDefault(); openCustomColorPicker(hexEl); });
+  hexEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCustomColorPicker(hexEl); }
+  });
+}
 
-  // Toggle RGB panel when the colour swatch is clicked
-  hex.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const panel = document.getElementById(panelId);
-    if (!panel) return;
-    const isOpen = panel.style.display !== 'none';
-    closeAllRGBPanels();
-    if (!isOpen) {
-      panel.style.display = 'flex';
-      syncRGBfromHex(name);
+function openCustomColorPicker(inputEl) {
+  document.querySelector('.ccp-overlay')?.remove();
+
+  const startHex = inputEl.value || '#000000';
+  const rgb0 = hexToRgb(startHex);
+  const hsv0 = rgbToHsv(rgb0.r, rgb0.g, rgb0.b);
+  let H = hsv0.h, S = hsv0.s, V = hsv0.v;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'ccp-overlay';
+  overlay.innerHTML = `
+    <div class="ccp-panel" role="dialog" aria-label="Colour picker">
+      <div class="ccp-header">
+        <span class="ccp-title">Pick a colour</span>
+        <button type="button" class="ccp-close" aria-label="Cancel">✕</button>
+      </div>
+      <div class="ccp-sv-wrap">
+        <canvas class="ccp-sv-canvas"></canvas>
+        <div class="ccp-sv-thumb"></div>
+      </div>
+      <div class="ccp-hue-wrap">
+        <canvas class="ccp-hue-canvas"></canvas>
+        <div class="ccp-hue-thumb"></div>
+      </div>
+      <div class="ccp-bottom">
+        <div class="ccp-swatch"></div>
+        <span class="ccp-hash">#</span>
+        <input class="ccp-hex-input" type="text" maxlength="6" spellcheck="false">
+        <button type="button" class="btn btn-primary ccp-done">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const panel    = overlay.querySelector('.ccp-panel');
+  const svCanvas = overlay.querySelector('.ccp-sv-canvas');
+  const hueCanvas= overlay.querySelector('.ccp-hue-canvas');
+  const svThumb  = overlay.querySelector('.ccp-sv-thumb');
+  const hueThumb = overlay.querySelector('.ccp-hue-thumb');
+  const swatch   = overlay.querySelector('.ccp-swatch');
+  const hexInput = overlay.querySelector('.ccp-hex-input');
+
+  // Size canvases to match CSS layout
+  function sizeCanvases() {
+    const svW = svCanvas.offsetWidth   || 264;
+    const svH = svCanvas.offsetHeight  || 160;
+    const huW = hueCanvas.offsetWidth  || 264;
+    const huH = hueCanvas.offsetHeight || 20;
+    svCanvas.width  = svW;  svCanvas.height = svH;
+    hueCanvas.width = huW; hueCanvas.height = huH;
+  }
+
+  function drawSV() {
+    const ctx = svCanvas.getContext('2d');
+    const W = svCanvas.width, H = svCanvas.height;
+    const { r, g, b } = hsvToRgb(H, 1, 1);
+    const gradX = ctx.createLinearGradient(0, 0, W, 0);
+    gradX.addColorStop(0, '#fff');
+    gradX.addColorStop(1, `rgb(${r},${g},${b})`);
+    ctx.fillStyle = gradX; ctx.fillRect(0, 0, W, H);
+    const gradY = ctx.createLinearGradient(0, 0, 0, H);
+    gradY.addColorStop(0, 'rgba(0,0,0,0)');
+    gradY.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = gradY; ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawHue() {
+    const ctx = hueCanvas.getContext('2d');
+    const W = hueCanvas.width, H = hueCanvas.height;
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    for (let i = 0; i <= 6; i++) {
+      const { r, g, b } = hsvToRgb(i * 60, 1, 1);
+      grad.addColorStop(i / 6, `rgb(${r},${g},${b})`);
+    }
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  }
+
+  function positionThumbs() {
+    const svW = svCanvas.offsetWidth, svH = svCanvas.offsetHeight;
+    const huW = hueCanvas.offsetWidth;
+    svThumb.style.left  = (S * svW) + 'px';
+    svThumb.style.top   = ((1 - V) * svH) + 'px';
+    hueThumb.style.left = (H / 360 * huW) + 'px';
+  }
+
+  function applyColour() {
+    const { r, g, b } = hsvToRgb(H, S, V);
+    const hex = rgbToHex(r, g, b);
+    swatch.style.background = hex;
+    hexInput.value = hex.replace('#', '');
+    inputEl.value  = hex;
+    updateColourPreview();
+  }
+
+  function canvasXY(canvas, e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY);
+    return {
+      x: Math.max(0, Math.min(1, (cx - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (cy - rect.top)  / rect.height))
+    };
+  }
+
+  // SV drag
+  let svDragging = false;
+  function onSV(e) {
+    e.preventDefault();
+    const { x, y } = canvasXY(svCanvas, e);
+    S = x; V = 1 - y;
+    positionThumbs(); applyColour();
+  }
+  svCanvas.addEventListener('pointerdown', e => { svDragging = true; svCanvas.setPointerCapture(e.pointerId); onSV(e); });
+  svCanvas.addEventListener('pointermove', e => { if (svDragging) onSV(e); });
+  svCanvas.addEventListener('pointerup',   () => { svDragging = false; });
+
+  // Hue drag
+  let hueDragging = false;
+  function onHue(e) {
+    e.preventDefault();
+    const { x } = canvasXY(hueCanvas, e);
+    H = x * 360;
+    drawSV(); positionThumbs(); applyColour();
+  }
+  hueCanvas.addEventListener('pointerdown', e => { hueDragging = true; hueCanvas.setPointerCapture(e.pointerId); onHue(e); });
+  hueCanvas.addEventListener('pointermove', e => { if (hueDragging) onHue(e); });
+  hueCanvas.addEventListener('pointerup',   () => { hueDragging = false; });
+
+  // Hex input
+  hexInput.addEventListener('input', () => {
+    const v = '#' + hexInput.value.replace(/[^0-9a-f]/gi, '');
+    if (/^#[0-9a-f]{6}$/i.test(v)) {
+      const rgb = hexToRgb(v);
+      const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+      H = hsv.h; S = hsv.s; V = hsv.v;
+      drawSV(); positionThumbs();
+      swatch.style.background = v;
+      inputEl.value = v; updateColourPreview();
     }
   });
 
-  hex.addEventListener('input', () => {
-    syncRGBfromHex(name);
-    updateColourPreview();
+  // Done / cancel
+  overlay.querySelector('.ccp-done').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.ccp-close').addEventListener('click', () => {
+    inputEl.value = startHex; updateColourPreview(); overlay.remove();
   });
+  overlay.addEventListener('pointerdown', e => { if (e.target === overlay) { inputEl.value = startHex; updateColourPreview(); overlay.remove(); } });
 
-  [rId, gId, bId].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-      syncHexFromRGB(name);
-      updateColourPreview();
-    });
+  // Init — wait one frame for layout so offsetWidth is accurate
+  requestAnimationFrame(() => {
+    sizeCanvases();
+    drawSV();
+    drawHue();
+    positionThumbs();
+    applyColour();
   });
-}
-
-// Close RGB panels when tapping anywhere outside a swatch or panel
-document.addEventListener('click', (e) => {
-  const insidePanel = e.target.closest('.rgb-inputs');
-  const insideSwatch = e.target.classList.contains('colour-swatch');
-  if (!insidePanel && !insideSwatch) closeAllRGBPanels();
-});
-
-function colourIds(name) {
-  const map = { header: 'colourHeader', accent: 'colourAccent', bg: 'colourBg' };
-  return { hexId: map[name], rId: map[name]+'R', gId: map[name]+'G', bId: map[name]+'B' };
-}
-
-function setColour(name, hex) {
-  const ids = colourIds(name);
-  document.getElementById(ids.hexId).value = hex;
-  syncRGBfromHex(name);
-}
-
-function syncRGBfromHex(name) {
-  const ids = colourIds(name);
-  const hex = document.getElementById(ids.hexId).value;
-  const [r,g,b] = hexToRgb(hex);
-  const rEl = document.getElementById(ids.rId);
-  const gEl = document.getElementById(ids.gId);
-  const bEl = document.getElementById(ids.bId);
-  if (rEl) { rEl.value = r; gEl.value = g; bEl.value = b; }
-}
-
-function syncHexFromRGB(name) {
-  const ids = colourIds(name);
-  const r = parseInt(document.getElementById(ids.rId)?.value || '0');
-  const g = parseInt(document.getElementById(ids.gId)?.value || '0');
-  const b = parseInt(document.getElementById(ids.bId)?.value || '0');
-  const hex = rgbToHex(clamp(r), clamp(g), clamp(b));
-  document.getElementById(ids.hexId).value = hex;
 }
 
 function hexToRgb(hex) {
-  const h = hex.replace('#', '');
-  if (h.length !== 6) return [0,0,0];
-  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  const clean = String(hex || '#000000').replace('#', '');
+  const n = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
-function rgbToHex(r,g,b) {
-  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => clampRgb(v).toString(16).padStart(2, '0')).join('');
 }
 
-function clamp(n) { return Math.max(0, Math.min(255, isNaN(n) ? 0 : n)); }
+function clampRgb(v) {
+  return Math.max(0, Math.min(255, parseInt(v, 10) || 0));
+}
+
+function setColour(name, hex) {
+  const map = { header: 'colourHeader', accent: 'colourAccent', bg: 'colourBg' };
+  const el = document.getElementById(map[name]);
+  if (el) el.value = hex;
+}
 
 function updateColourPreview() {
   const primary = document.getElementById('colourHeader').value;
@@ -751,7 +1036,7 @@ function setupPage2() {
     } else if (skipped) {
       toast(`All jobs already in your list.`, 'error');
     } else {
-      toast("Can't read your input — remember format: job, price", 'error');
+      toast("Can't read your input - remember format: job, price", 'error');
     }
   });
 
@@ -799,7 +1084,7 @@ function readCSV(file) {
     } else if (skipped) {
       toast('All jobs already in your list.', 'error');
     } else {
-      toast("Can't read your input — remember format: job, price", 'error');
+      toast("Can't read your input - remember format: job, price", 'error');
     }
   };
   reader.readAsText(file);
@@ -864,7 +1149,7 @@ function addIndividualJob() {
       setVal('jobName',''); setVal('jobPrice',''); setVal('jobUnit','');
       refreshPriceList();
       updateJobPicker();
-      toast('Added as alternative.', 'success');
+      showSavedPopup('Added', null, 3000);
     });
     return;
   }
@@ -874,7 +1159,7 @@ function addIndividualJob() {
   setVal('jobName',''); setVal('jobPrice',''); setVal('jobUnit','');
   refreshPriceList();
   updateJobPicker();
-  toast('Job added.', 'success');
+  showSavedPopup('Added', null, 3000);
 }
 
 function showDuplicatePrompt(name, onConfirm) {
@@ -991,7 +1276,7 @@ function editJobInline(row, job) {
     save();
     refreshPriceList();
     updateJobPicker();
-    toast('Job updated.', 'success');
+    showSavedPopup("I've updated that job for you.");
   };
 
   row.querySelector('.save-edit').addEventListener('click', saveEdit);
@@ -1010,35 +1295,46 @@ function deleteJob(id) {
   toast('Job deleted.');
 }
 
-/* ===== PAGE 3 — QUOTE BUILDER ===== */
+/* ===== PAGE 3 — CUSTOMER DETAILS ===== */
 function setupPage3() {
-  // Doc type toggle
-  document.getElementById('dtEstimate').addEventListener('click', () => setDocType('Estimate'));
-  document.getElementById('dtQuote').addEventListener('click',    () => setDocType('Quote'));
+  // Doc type chooser now lives on page-completion — nothing needed here
+}
+
+/* ===== PAGE JOBS — ADD JOBS ===== */
+function setupPageJobs() {
+  // Job picker search
+  document.getElementById('jobPickerSearch').addEventListener('input', () => updateJobPicker());
+
+  // Picker click listeners are attached directly in updateJobPicker()
+
+  // Custom item
+  document.getElementById('addCustomItemBtn').addEventListener('click', addCustomItem);
+
+  // Mic / voice button
+  document.getElementById('voiceBtn')?.addEventListener('click', toggleVoice);
+
+  // Back to customer details
+  document.getElementById('backToCustomerBtn')?.addEventListener('click', () => {
+    showPage('page3');
+  });
+
+  // Save and go to completion
+  document.getElementById('saveJobsGoToCompletionBtn')?.addEventListener('click', () => {
+    recalcTotals();
+    showPage('page-completion');
+  });
+}
+
+/* ===== PAGE COMPLETION — TOTALS, SIGNATURE & SAVE ===== */
+function setupPageCompletion() {
+  // Doc type radio checkboxes
+  document.getElementById('dtEstimate').addEventListener('change', () => setDocType('Estimate'));
+  document.getElementById('dtQuote').addEventListener('change',    () => setDocType('Quote'));
 
   // Valid for
   document.getElementById('docValidFor').addEventListener('change', e => {
     document.getElementById('validCustomGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
   });
-
-  // Job picker search
-  document.getElementById('jobPickerSearch').addEventListener('input', () => updateJobPicker());
-
-  // Picker click — event delegation so it works after every innerHTML redraw
-  const pickerContainer = document.getElementById('jobPickerList');
-  pickerContainer.addEventListener('click', e => {
-    const item = e.target.closest('.pick-item');
-    if (item) addJobToQuote(item.dataset.jobId);
-  });
-  pickerContainer.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const item = e.target.closest('.pick-item');
-      if (item) { e.preventDefault(); addJobToQuote(item.dataset.jobId); }
-    }
-  });
-
-  // Custom item
-  document.getElementById('addCustomItemBtn').addEventListener('click', addCustomItem);
 
   // VAT
   document.getElementById('vatSelect').addEventListener('change', e => {
@@ -1046,50 +1342,45 @@ function setupPage3() {
     recalcTotals();
   });
   document.getElementById('vatCustom').addEventListener('input', recalcTotals);
+
+  // Discount
   document.getElementById('discountPct').addEventListener('change', e => {
     document.getElementById('discountCustom').style.display = e.target.value === 'custom' ? 'inline-block' : 'none';
     recalcTotals();
   });
   document.getElementById('discountCustom').addEventListener('input', recalcTotals);
 
-  // Signature canvas
-  setupSignatureCanvas();
-
-  // Type-to-sign
-  document.getElementById('custSigText').addEventListener('input', () => {
-    if (getVal('custSigText')) clearCanvas();
-  });
-
-  // Auto-populate sig text from authSig name field
+  // Sync signature preview whenever the Authorised Signature name changes
   document.getElementById('authSig').addEventListener('input', () => {
     const sigText = document.getElementById('custSigText');
-    // Only pre-fill if the canvas is blank and the sig text hasn't been manually changed
+    // Only auto-sync if the user hasn't manually edited the preview
     if (!sigText.dataset.userEdited) {
       sigText.value = document.getElementById('authSig').value;
     }
   });
   document.getElementById('custSigText').addEventListener('input', () => {
+    // Mark as manually edited so auto-sync stops overwriting it
     document.getElementById('custSigText').dataset.userEdited = '1';
   });
 
-  document.getElementById('clearSigBtn').addEventListener('click', () => {
-    clearCanvas();
-    setVal('custSigText', '');
-    delete document.getElementById('custSigText').dataset.userEdited;
-  });
-
   // Quote footer buttons
-  document.getElementById('previewQuoteBtn').addEventListener('click', () => openPreview(buildQuoteDoc(), 'quote'));
+  document.getElementById('previewQuoteBtn').addEventListener('click', () => { if (docTypeGuard()) openPreview(buildQuoteDoc(), 'quote'); });
   document.getElementById('saveQuoteBtn').addEventListener('click', saveQuote);
-  document.getElementById('printQuoteBtn').addEventListener('click', () => printDoc(buildQuoteDoc()));
-  document.getElementById('sendQuoteBtn').addEventListener('click', () => sendDoc(buildQuoteDoc(), getDocFilename('quote')));
+  document.getElementById('printQuoteBtn').addEventListener('click', () => { if (docTypeGuard()) printDoc(buildQuoteDoc()); });
+  document.getElementById('sendQuoteBtn').addEventListener('click', () => { if (docTypeGuard()) openQuoteModalFromCurrentForm(); });
+
+  // Signature canvas
+  setupSignatureCanvas();
 }
 
 function setDocType(type) {
   state.quote.type = type;
-  document.getElementById('dtEstimate').classList.toggle('active', type === 'Estimate');
-  document.getElementById('dtQuote').classList.toggle('active', type === 'Quote');
+  const estEl = document.getElementById('dtEstimate');
+  const quoteEl = document.getElementById('dtQuote');
+  if (estEl) estEl.checked = (type === 'Estimate');
+  if (quoteEl) quoteEl.checked = (type === 'Quote');
   generateRef();
+  personaliseText();
 }
 
 function prepareNewQuote() {
@@ -1104,7 +1395,7 @@ function prepareNewQuote() {
   const stored = parseInt(localStorage.getItem(KEY_REF) || '100');
   pendingRefNum = Math.max(stored, 100) + 1;
   state.quote = {
-    type: 'Estimate',
+    type: '',
     custTitle: '', custFirstName: '', custLastName: '',
     custAddr: '', custPostcode: '', custPhone: '', custEmail: '',
     date: todayStr(), validFor: '14', validCustom: '',
@@ -1149,8 +1440,14 @@ function populateQuoteForm() {
   setVal('quoteNotes',    q.notes);
   setVal('quotePrivateNotes', q.privateNotes);
   setVal('customTerms',   q.customTerms || '');
-  setVal('authSig',       q.authSig || state.company.businessName || '');
-  setVal('custSigText',   '');
+  const traderName = (state.company.firstName + ' ' + state.company.lastName).trim() || state.company.businessName || '';
+  const sigName = q.authSig || traderName;
+  setVal('authSig',     sigName);
+  // Always show the name in the signature preview — never blank
+  setVal('custSigText', q.custSigText || sigName);
+  // Reset user-edited flag so authSig changes still sync
+  const sigEl = document.getElementById('custSigText');
+  if (sigEl) delete sigEl.dataset.userEdited;
   // Set discount select (backwards-compat: old docs stored any number, new ones use preset or 'custom')
   const savedDisc = String(q.discount || '0');
   const discPresets = ['0', '5', '10', '20'];
@@ -1180,10 +1477,11 @@ function populateQuoteForm() {
 }
 
 function populateAuthSig() {
+  const name = (state.company.firstName + ' ' + state.company.lastName).trim() || state.company.businessName || '';
   const authSigEl = document.getElementById('authSig');
-  if (authSigEl && !authSigEl.value) {
-    authSigEl.value = state.company.businessName || (state.company.firstName + ' ' + state.company.lastName).trim() || '';
-  }
+  if (authSigEl && !authSigEl.value) authSigEl.value = name;
+  const custSigEl = document.getElementById('custSigText');
+  if (custSigEl && !custSigEl.value && !custSigEl.dataset.userEdited) custSigEl.value = name;
 }
 
 function setTodayDate() {
@@ -1212,37 +1510,50 @@ function updateJobPicker() {
   const q = getVal('jobPickerSearch').toLowerCase();
   const filtered = state.priceList.filter(j => j.name.toLowerCase().includes(q));
   const container = document.getElementById('jobPickerList');
+  if (!container) return;
+
+  container.innerHTML = '';
 
   if (!filtered.length) {
-    container.innerHTML = '<p style="color:#888;font-size:0.85rem;padding:8px 0">No jobs match your search.</p>';
+    const msg = document.createElement('p');
+    msg.style.cssText = 'color:#888;font-size:0.85rem;padding:8px 0';
+    msg.textContent = q ? 'No jobs match your search.' : 'No jobs in your price list yet.';
+    container.appendChild(msg);
     return;
   }
 
-  container.innerHTML = filtered.map(item => {
+  filtered.forEach(item => {
     const quoteItem = (state.quote.items || []).find(qi => qi.id === item.id || qi.name === item.name);
     const inQuote = !!quoteItem;
     const qty = quoteItem ? quoteItem.qty : 0;
-    return `
-      <div class="pick-item${inQuote ? ' added' : ''}"
-           data-job-id="${esc(item.id)}"
-           role="button" tabindex="0"
-           aria-label="Add ${esc(item.name)} to quote">
-        <div class="pick-name">
-          ${esc(item.name)}${item.unit ? `<span class="pick-unit">(${esc(item.unit)})</span>` : ''}
-        </div>
-        <span class="pick-price">${fmtPrice(item.price)}</span>
-        <span class="pick-add-btn">${inQuote ? qty : '+'}</span>
-      </div>
-    `;
-  }).join('');
 
+    const el = document.createElement('div');
+    el.className = 'pick-item' + (inQuote ? ' added' : '');
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', 'Add ' + (item.name || '') + ' to quote');
+    el.innerHTML = `
+      <div class="pick-name">${esc(item.name)}${item.unit ? `<span class="pick-unit">(${esc(item.unit)})</span>` : ''}</div>
+      <span class="pick-price">${fmtPrice(item.price)}</span>
+      <span class="pick-add-btn">${inQuote ? qty : '+'}</span>
+    `;
+
+    const doAdd = () => addJobToQuote(item.id || item.name);
+    el.addEventListener('click', doAdd);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doAdd(); } });
+
+    container.appendChild(el);
+  });
 }
 
 
 function addJobToQuote(jobId) {
-  const job = state.priceList.find(j => j.id === jobId);
+  // Match by id first, fall back to name (handles legacy items without ids)
+  const job = state.priceList.find(j => j.id === jobId) || state.priceList.find(j => j.name === jobId);
   if (!job) return;
-  const existing = state.quote.items.find(i => i.id === job.id);
+  // Ensure the job has an id going forward
+  if (!job.id) { job.id = uid(); ls(KEY_PL, state.priceList); }
+  const existing = state.quote.items.find(i => i.id === job.id || i.name === job.name);
   if (existing) {
     existing.qty++;
   } else {
@@ -1333,6 +1644,12 @@ function recalcTotals() {
   document.getElementById('qVatAmount').textContent  = fmtPrice(vatAmt);
   document.getElementById('qDiscount').textContent   = `-${fmtPrice(discount)}`;
   document.getElementById('qTotal').textContent      = fmtPrice(total);
+
+  // Show/hide discount and VAT rows in the totals block
+  const discountRow = document.getElementById('discountRow');
+  const vatRow = document.getElementById('vatRow');
+  if (discountRow) discountRow.style.display = discount > 0 ? '' : 'none';
+  if (vatRow) vatRow.style.display = vatAmt > 0 ? '' : 'none';
 }
 
 function collectQuoteState() {
@@ -1362,12 +1679,23 @@ function collectQuoteState() {
     selectedTerms,
     customTerms:   getVal('customTerms'),
     authSig:       getVal('authSig'),
-    custSig:       getCanvasDataURL(),
+    custSigText:   getVal('custSigText'),
+    custSig:       '',
     sigDate:       todayStr()
   };
 }
 
+function docTypeGuard() {
+  if (!state.quote.type) {
+    toast('Please select Estimate or Quote first.', 'error');
+    document.getElementById('dtEstimate')?.closest('.doc-type-chooser')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
+  return true;
+}
+
 function saveQuote() {
+  if (!docTypeGuard()) return;
   const q = collectQuoteState();
   // Always use the live items array directly from state
   q.items = [...state.quote.items];
@@ -1376,6 +1704,9 @@ function saveQuote() {
     document.getElementById('custFirstName').focus();
     return;
   }
+
+  const isEditing = !!state.editingDocId;
+  const docType   = q.type || 'Document';
 
   if (state.editingDocId) {
     const idx = state.saved.findIndex(d => d.id === state.editingDocId);
@@ -1406,7 +1737,8 @@ function saveQuote() {
       invoiceSent: false,
       paid: false,
       paidAmount: 0,
-      paidDate: ''
+      paidDate: '',
+      payments: []
     });
     // Commit the pending ref number to storage (only on actual save, never on abandon)
     if (pendingRefNum !== null) {
@@ -1419,10 +1751,10 @@ function saveQuote() {
   save();
   updateSavedBadge();
   refreshSavedDocs();
-  showSavedPopup(() => {
-    showPage('page4');
-    showNavHint();
-  });
+  const popupLabel = isEditing ? "I've saved your changes." : `I've saved your ${docType.toLowerCase()}.`;
+  showSavedPopup(popupLabel);
+  showPage('page4');
+  showNavHint();
 }
 
 function buildCustName(q) {
@@ -1491,10 +1823,147 @@ function getCanvasDataURL() {
   return hasDrawing ? canvas.toDataURL() : '';
 }
 
+/* ===== VOICE RECOGNITION ===== */
+function toggleVoice() {
+  const isSR = ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  if (!isSR) {
+    toast('Voice input needs Chrome or Edge.', 'error');
+    return;
+  }
+  if (voiceRecording) {
+    voiceRecogniser && voiceRecogniser.stop();
+    stopVoiceUI();
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  voiceRecogniser = new SR();
+  voiceRecogniser.continuous     = false;
+  voiceRecogniser.interimResults = false;
+  voiceRecogniser.lang           = 'en-GB';
+  voiceRecogniser.maxAlternatives = 1;
+
+  voiceRecogniser.onstart = () => {
+    voiceRecording = true;
+    document.getElementById('voiceBtn')?.classList.add('recording');
+    showVoiceBox('Listening… speak a job name.');
+  };
+  voiceRecogniser.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    showVoiceBox(`Heard: "${transcript}"`);
+    matchVoiceToJob(transcript);
+  };
+  voiceRecogniser.onerror = e => {
+    const msgs = {
+      'not-allowed':  'Microphone access denied. Please allow mic access in your browser settings.',
+      'no-speech':    'No speech detected. Tap the mic and try again.',
+      'network':      'Voice needs an internet connection and HTTPS to work.',
+      'audio-capture':'No microphone found. Check your device settings.',
+      'aborted':      ''
+    };
+    const msg = msgs[e.error] || `Voice error: ${e.error}. Try using the search instead.`;
+    if (msg) toast(msg, 'error');
+    stopVoiceUI();
+  };
+  voiceRecogniser.onend = () => stopVoiceUI();
+  voiceRecogniser.start();
+}
+
+function stopVoiceUI() {
+  voiceRecording = false;
+  document.getElementById('voiceBtn')?.classList.remove('recording');
+}
+
+function showVoiceBox(msg) {
+  const box = document.getElementById('voiceBox');
+  if (!box) return;
+  box.textContent = msg;
+  box.classList.remove('hidden');
+}
+
+function matchVoiceToJob(transcript) {
+  const t = transcript.toLowerCase().trim();
+  // Find all matches
+  const matches = state.priceList.filter(j => j.name.toLowerCase().includes(t) || t.includes(j.name.toLowerCase()));
+
+  if (matches.length === 1) {
+    // Exactly one match — add it directly
+    addJobToQuote(matches[0].id || matches[0].name);
+    showVoiceBox(`Added: ${matches[0].name}`);
+    setTimeout(() => document.getElementById('voiceBox')?.classList.add('hidden'), 2500);
+    return;
+  }
+
+  if (matches.length > 1) {
+    // Multiple matches — ask which one
+    document.getElementById('voiceBox')?.classList.add('hidden');
+    const list = document.getElementById('voicePickList');
+    list.innerHTML = '';
+    matches.forEach(j => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'vpick-btn';
+      btn.innerHTML = `<span>${esc(j.name)}</span><span class="vpick-btn-price">${fmtPrice(j.price)}</span>`;
+      btn.addEventListener('click', () => {
+        addJobToQuote(j.id || j.name);
+        document.getElementById('voicePickModal').style.display = 'none';
+      });
+      list.appendChild(btn);
+    });
+    document.getElementById('voicePickModal').style.display = 'flex';
+    return;
+  }
+
+  // No match — open the "not found" modal pre-filled with what was heard
+  document.getElementById('voiceBox')?.classList.add('hidden');
+  setVal('vnfName', transcript);
+  setVal('vnfPrice', '');
+  setVal('vnfUnit', '');
+  document.getElementById('voiceNotFoundModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('vnfPrice')?.focus(), 150);
+}
+
+function closeVoiceNotFoundModal() {
+  document.getElementById('voiceNotFoundModal').style.display = 'none';
+}
+
+function vnfSubmit(saveToList) {
+  const name  = (getVal('vnfName') || '').trim();
+  const price = parseFloat(getVal('vnfPrice'));
+  const unit  = (getVal('vnfUnit') || '').trim();
+  if (!name) { document.getElementById('vnfName').classList.add('error'); return; }
+  if (isNaN(price) || price < 0) { document.getElementById('vnfPrice').classList.add('error'); return; }
+  document.getElementById('vnfName').classList.remove('error');
+  document.getElementById('vnfPrice').classList.remove('error');
+
+  if (saveToList) {
+    // Add to price list
+    state.priceList.push({ id: uid(), name, price, unit });
+    save();
+    refreshPriceList();
+  }
+
+  // Add to current quote as a one-off item
+  state.quote.items.push({ id: uid(), name, unitPrice: price, unit, qty: 1 });
+  renderQuoteItems();
+  recalcTotals();
+  updateJobPicker();
+  closeVoiceNotFoundModal();
+  toast(saveToList ? 'Added to your price list and this job.' : 'Added to this job.', 'success');
+}
+
 /* ===== PAGE 4 — SAVED DOCS ===== */
 function setupPage4() {
   const sel = document.getElementById('savedFilterSelect');
   if (sel) sel.addEventListener('change', () => refreshSavedDocs());
+
+  const expSel = document.getElementById('exportSelect');
+  if (expSel) {
+    expSel.addEventListener('change', () => {
+      const val = expSel.value;
+      if (!val) return;
+      exportDocsCSV(val);
+    });
+  }
 }
 
 function refreshSavedDocs() {
@@ -1506,6 +1975,8 @@ function refreshSavedDocs() {
   let docs = [...state.saved];
   if      (filter === 'Estimate') docs = docs.filter(d => d.type === 'Estimate');
   else if (filter === 'Quote')    docs = docs.filter(d => d.type === 'Quote');
+  else if (filter === 'invoiced') docs = docs.filter(d => d.invoiceSent && !d.paid);
+  else if (filter === 'overdue')  docs = docs.filter(d => !d.paid && d.invoiceSent && d.invoiceDueDate && todayStr() > d.invoiceDueDate);
   else if (filter === 'paid')     docs = docs.filter(d => d.paid);
   else if (filter === 'unpaid')   docs = docs.filter(d => !d.paid);
   else if (filter === 'accepted') docs = docs.filter(d => d.accepted);
@@ -1524,14 +1995,19 @@ function refreshSavedDocs() {
   docs.forEach(doc => {
     const card = document.createElement('div');
     const docType = doc.type || (doc.quote && doc.quote.type) || 'Estimate';
-    const statusBadge = doc.paid ? 'paid' : doc.invoiceSent ? 'invoiced' : docType.toLowerCase();
+    const isOverdue = !doc.paid && doc.invoiceSent && doc.invoiceDueDate && todayStr() > doc.invoiceDueDate;
+    const statusBadge = doc.paid ? 'paid' : isOverdue ? 'overdue' : doc.invoiceSent ? 'invoiced' : docType.toLowerCase();
     card.className = `saved-doc-card status-${statusBadge}`;
-    const statusLabel = doc.paid ? 'Paid' : doc.invoiceSent ? 'Invoiced' : docType;
+    const statusLabel = doc.paid ? 'Paid' : isOverdue ? `Overdue since ${formatDate(doc.invoiceDueDate)}` : doc.invoiceSent ? 'Invoiced' : docType;
+
+    // Payment totals for card status only (history shown in modal, not on card)
+    const payments   = getDocPayments(doc);
+    const totalPaid  = payments.reduce((s, p) => s + (p.amount || 0), 0);
 
     card.innerHTML = `
       <div class="saved-doc-header">
         <div>
-          <div class="saved-doc-name">${esc(doc.custName || 'Unknown Customer')}</div>
+          <span class="saved-doc-name">${esc(doc.custName || 'Unknown Customer')}</span>
           <div class="saved-doc-ref">${esc(doc.ref || '')} &bull; ${formatDate(doc.date)}</div>
         </div>
         <div style="text-align:right">
@@ -1541,44 +2017,115 @@ function refreshSavedDocs() {
       </div>
       <div class="journey-btns">
         <button type="button" class="journey-btn btn-send-quote" data-id="${doc.id}">
-          <span class="jb-circle">A</span> Send ${esc(docType)}
+          <span class="jb-circle">A</span> ${esc(docType)}
         </button>
-        <button type="button" class="journey-btn btn-send-invoice" data-id="${doc.id}" ${!doc.invoiceSent && !doc.paid ? '' : ''}>
-          <span class="jb-circle">B</span> Send Invoice
+        <button type="button" class="journey-btn btn-send-invoice" data-id="${doc.id}">
+          <span class="jb-circle">B</span> Invoice
         </button>
         <button type="button" class="journey-btn btn-send-receipt" data-id="${doc.id}">
-          <span class="jb-circle">C</span> Send Receipt
+          <span class="jb-circle">C</span> Receipt
         </button>
       </div>
-      <div class="saved-doc-actions">
-        <div class="saved-doc-actions-left">
-          ${doc.paid
-            ? `<span class="type-badge paid">Paid ${doc.paidDate ? formatDate(doc.paidDate) : ''}</span>`
-            : doc.paidAmount > 0
-              ? `<span class="partial-paid-label">Paid ${fmtPrice(doc.paidAmount)} of ${fmtPrice(doc.total || 0)}</span>
-                 <button type="button" class="btn btn-sm btn-outline btn-mark-paid" data-id="${doc.id}">+ Money In</button>`
-              : `<button type="button" class="btn btn-sm btn-outline btn-mark-paid" data-id="${doc.id}">✓ Money In</button>`
-          }
-        </div>
-        <button type="button" class="btn btn-sm btn-outline btn-edit-doc" data-id="${doc.id}">Edit</button>
-        <button type="button" class="btn btn-sm btn-danger-outline btn-delete-doc" data-id="${doc.id}">Delete</button>
+      <div class="saved-doc-payment-tally">
+        <span class="sdpt-payment-info">
+          ${totalPaid > 0
+            ? `<span class="sdpt-paid">Paid ${fmtPrice(totalPaid)}</span>${totalPaid < (doc.total || 0) ? `<span class="sdpt-outstanding">&middot; ${fmtPrice(Math.max(0, (doc.total || 0) - totalPaid))} outstanding</span>` : '<span class="sdpt-full">&#10003; Paid in full</span>'}`
+            : ''}
+        </span>
+        <button type="button" class="btn-view-customer" data-id="${doc.id}">View Customer</button>
       </div>
     `;
 
     container.appendChild(card);
 
-    card.querySelector('.btn-send-quote').addEventListener('click', () => {
-      openPreview(buildDocHtml(doc, 'quote'), 'quote', doc.id);
-    });
-    card.querySelector('.btn-send-invoice').addEventListener('click', () => openInvoiceModal(doc.id));
-    card.querySelector('.btn-send-receipt').addEventListener('click', () => {
-      if (doc.paid) openReceiptModal(doc.id);
-      else toast('Record full payment first to send a receipt', 'info');
-    });
-    card.querySelector('.btn-mark-paid')?.addEventListener('click', () => openMarkPaid(doc.id));
-    card.querySelector('.btn-edit-doc').addEventListener('click', () => editDoc(doc.id));
-    card.querySelector('.btn-delete-doc').addEventListener('click', () => deleteDoc(doc.id));
+    card.querySelector('.btn-send-quote').addEventListener('click', () => openQuoteModal(doc.id));
+    card.querySelector('.btn-send-invoice').addEventListener('click', () => previewInvoice(doc.id));
+    card.querySelector('.btn-send-receipt').addEventListener('click', () => handleReceiptRequest(doc.id));
+    card.querySelector('.btn-view-customer').addEventListener('click', () => openCustomerDashboardForDoc(doc.id));
   });
+}
+
+function exportDocsCSV(filter) {
+  // Apply the same filter logic as refreshSavedDocs
+  let docs = [...state.saved];
+  if      (filter === 'Estimate') docs = docs.filter(d => d.type === 'Estimate');
+  else if (filter === 'Quote')    docs = docs.filter(d => d.type === 'Quote');
+  else if (filter === 'invoiced') docs = docs.filter(d => d.invoiceSent && !d.paid);
+  else if (filter === 'overdue')  docs = docs.filter(d => !d.paid && d.invoiceSent && d.invoiceDueDate && todayStr() > d.invoiceDueDate);
+  else if (filter === 'paid')     docs = docs.filter(d => d.paid);
+  else if (filter === 'unpaid')   docs = docs.filter(d => !d.paid);
+
+  if (!docs.length) {
+    toast('No jobs match that filter to export.', 'error');
+    return;
+  }
+
+  // CSV helper — wraps a value in quotes and escapes internal quotes
+  const csv = v => {
+    const s = String(v == null ? '' : v).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const headers = [
+    'Reference', 'Type', 'Date', 'Valid For',
+    'Title', 'First Name', 'Last Name',
+    'Address', 'Postcode', 'Phone', 'Email',
+    'Jobs', 'Subtotal (£)', 'Discount (%)', 'VAT (%)', 'Total (£)',
+    'Invoice Sent', 'Paid', 'Amount Paid (£)', 'Date Paid',
+    'Notes'
+  ];
+
+  const rows = docs.map(doc => {
+    const q   = doc.quote || {};
+    const items = (q.items || []).map(i => `${i.name} x${i.qty} @ £${(i.unitPrice||0).toFixed(2)}`).join('; ');
+
+    const sub     = (q.items || []).reduce((s, i) => s + (i.unitPrice || 0) * (i.qty || 1), 0);
+    const vatRate = q.vatRate === 'custom' ? parseFloat(q.vatCustom) || 0 : parseFloat(q.vatRate) || 0;
+    const disc    = parseFloat(q.discount) || 0;
+    const after   = sub - sub * disc / 100;
+    const total   = after + after * vatRate / 100;
+
+    const validFor = q.validFor === 'custom'
+      ? (q.validCustom ? q.validCustom + ' days' : '')
+      : (q.validFor ? q.validFor + ' days' : '');
+
+    return [
+      csv(doc.ref      || q.ref      || ''),
+      csv(doc.type     || q.type     || ''),
+      csv(doc.date     || q.date     || ''),
+      csv(validFor),
+      csv(q.custTitle     || ''),
+      csv(q.custFirstName || ''),
+      csv(q.custLastName  || ''),
+      csv(q.custAddr      || ''),
+      csv(q.custPostcode  || ''),
+      csv(q.custPhone     || ''),
+      csv(q.custEmail     || ''),
+      csv(items),
+      csv(sub.toFixed(2)),
+      csv(disc || '0'),
+      csv(vatRate || '0'),
+      csv((doc.total != null ? doc.total : total).toFixed(2)),
+      csv(doc.invoiceSent ? 'Yes' : 'No'),
+      csv(doc.paid ? 'Yes' : (doc.paidAmount > 0 ? 'Partial' : 'No')),
+      csv(doc.paidAmount ? doc.paidAmount.toFixed(2) : ''),
+      csv(getDocPayments(doc).map(p => `${fmtPrice(p.amount)} on ${formatDate(p.date)}`).join('; ') || ''),
+      csv(q.notes || '')
+    ].join(',');
+  });
+
+  const csvContent = [headers.map(h => csv(h)).join(','), ...rows].join('\r\n');
+  const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const filterLabel = { all: 'All', Estimate: 'Estimates', Quote: 'Quotes', invoiced: 'Invoiced', overdue: 'Overdue', paid: 'Paid', unpaid: 'Unpaid' }[filter] || filter;
+  a.href     = url;
+  a.download = `Lexi-Jobs-${filterLabel}-${todayStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`Exported ${docs.length} job${docs.length !== 1 ? 's' : ''} to spreadsheet.`, 'success');
 }
 
 function editDoc(id) {
@@ -1586,10 +2133,10 @@ function editDoc(id) {
   const doc = state.saved.find(d => d.id === id);
   if (!doc) { state.editingDocId = null; return; }
   loadQuoteFromDoc(doc);
-  showPage('page3');
-  // Update title to show this is an edit, not a new quote
-  const titleEl = document.getElementById('page3Title');
-  if (titleEl) titleEl.textContent = 'Edit ' + (doc.type || doc.quote?.type || 'Document');
+  setVal('jobPickerSearch', '');
+  updateJobPicker();
+  renderQuoteItems();
+  showPage('page-jobs');
   // Update save button to reflect edit mode
   const saveBtn = document.getElementById('saveQuoteBtn');
   if (saveBtn) saveBtn.textContent = '✓ Save Changes';
@@ -1613,23 +2160,178 @@ function updateSavedBadge() {
 
 /* ===== MODALS ===== */
 function setupModals() {
+  // Voice disambiguation modal
+  document.getElementById('closeVoicePickModal').addEventListener('click', () => {
+    document.getElementById('voicePickModal').style.display = 'none';
+  });
+  document.getElementById('voicePickNoneBtn').addEventListener('click', () => {
+    document.getElementById('voicePickModal').style.display = 'none';
+    setVal('vnfName', '');
+    setVal('vnfPrice', '');
+    setVal('vnfUnit', '');
+    document.getElementById('voiceNotFoundModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('vnfName')?.focus(), 150);
+  });
+
+  // Voice not-found modal
+  document.getElementById('closeVoiceNotFoundModal').addEventListener('click', closeVoiceNotFoundModal);
+  document.getElementById('vnfAddBothBtn').addEventListener('click', () => vnfSubmit(true));
+  document.getElementById('vnfAddOnceBtn').addEventListener('click', () => vnfSubmit(false));
+
   document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
+  document.getElementById('closeQuoteBtn').addEventListener('click', () => document.getElementById('quoteModal').style.display = 'none');
   document.getElementById('closeInvoiceBtn').addEventListener('click', () => document.getElementById('invoiceModal').style.display = 'none');
   document.getElementById('closeReceiptBtn').addEventListener('click', () => document.getElementById('receiptModal').style.display = 'none');
-  document.getElementById('closeMarkPaidBtn').addEventListener('click', () => document.getElementById('markPaidModal').style.display = 'none');
-  document.getElementById('cancelMarkPaidBtn').addEventListener('click', () => document.getElementById('markPaidModal').style.display = 'none');
+  document.getElementById('closeMarkPaidBtn').addEventListener('click', () => { document.getElementById('markPaidModal').style.display = 'none'; refreshActiveDashboard(); });
+  document.getElementById('cancelMarkPaidBtn').addEventListener('click', () => { document.getElementById('markPaidModal').style.display = 'none'; refreshActiveDashboard(); });
+  document.getElementById('mpAmount').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('confirmMarkPaidBtn').click(); } });
+  document.getElementById('closeEditPaymentsBtn').addEventListener('click', () => document.getElementById('editPaymentsModal').style.display = 'none');
+  document.getElementById('doneEditPaymentsBtn').addEventListener('click', () => document.getElementById('editPaymentsModal').style.display = 'none');
+  document.getElementById('closeClientPickerBtn').addEventListener('click', () => document.getElementById('clientPickerModal').style.display = 'none');
+  document.getElementById('closeEditChoiceBtn')?.addEventListener('click', () => document.getElementById('editChoiceModal').style.display = 'none');
+  document.getElementById('closePhotosBtn')?.addEventListener('click', closePhotosAndReturn);
+  document.getElementById('savePhotosBtn')?.addEventListener('click', closePhotosAndReturn);
+  document.getElementById('closeOutstandingBtn')?.addEventListener('click', closeOutstandingReceipt);
+  document.getElementById('outstandingNoBtn')?.addEventListener('click', closeOutstandingReceipt);
+  document.getElementById('outstandingYesBtn')?.addEventListener('click', () => {
+    const docId = pendingReceiptDocId;
+    closeOutstandingReceipt();
+    if (docId) previewReceipt(docId);
+  });
+  document.getElementById('closePreviewFirstBtn')?.addEventListener('click', closePreviewFirstModal);
+  document.getElementById('previewFirstYesBtn')?.addEventListener('click', () => {
+    rememberPreviewChoice();
+    const fn = pendingPreviewSend;
+    closePreviewFirstModal();
+    if (fn) fn(true);
+  });
+  document.getElementById('previewFirstNoBtn')?.addEventListener('click', () => {
+    rememberPreviewChoice();
+    const fn = pendingPreviewSend;
+    closePreviewFirstModal();
+    if (fn) fn(false);
+  });
+  document.getElementById('closeBankDetailsBtn')?.addEventListener('click', () => document.getElementById('bankDetailsModal').style.display = 'none');
+  document.getElementById('copyBankDetailsBtn')?.addEventListener('click', copyBankDetails);
+  document.getElementById('shareBankDetailsBtn')?.addEventListener('click', shareBankDetails);
+  document.getElementById('closeCustomerDashboardBtn')?.addEventListener('click', () => {
+    document.getElementById('customerDashboardModal').style.display = 'none';
+    activeCustomerGroup = null;
+  });
+  document.getElementById('closeCustEditChoiceBtn')?.addEventListener('click', () => document.getElementById('customerEditChoiceModal').style.display = 'none');
+  document.getElementById('custEditDetailsBtn')?.addEventListener('click', () => customerEditPickDoc('details'));
+  document.getElementById('custEditJobBtn')?.addEventListener('click', () => customerEditPickDoc('job'));
+  document.getElementById('custEditMoneyBtn')?.addEventListener('click', () => customerEditPickDoc('money'));
+  document.getElementById('closeCustDetailsEditBtn')?.addEventListener('click', () => document.getElementById('customerDetailsEditModal').style.display = 'none');
+  document.getElementById('cancelCustDetailsEditBtn')?.addEventListener('click', () => document.getElementById('customerDetailsEditModal').style.display = 'none');
+  document.getElementById('saveCustDetailsBtn')?.addEventListener('click', saveCustomerDetails);
+  document.getElementById('closeJobDetailsEditBtn')?.addEventListener('click', () => document.getElementById('jobDetailsEditModal').style.display = 'none');
+  document.getElementById('cancelJobDetailsEditBtn')?.addEventListener('click', () => document.getElementById('jobDetailsEditModal').style.display = 'none');
+  document.getElementById('saveJobDetailsBtn')?.addEventListener('click', saveJobDetails);
+  document.getElementById('clientPickerNewCustomerBtn')?.addEventListener('click', createNewCustomerFromPicker);
+  document.getElementById('editChoiceMoneyBtn')?.addEventListener('click', () => {
+    const docId = activeEditChoiceDocId;
+    document.getElementById('editChoiceModal').style.display = 'none';
+    if (docId) openEditPayments(docId);
+  });
+  document.getElementById('editChoiceJobBtn')?.addEventListener('click', () => {
+    const docId = activeEditChoiceDocId;
+    document.getElementById('editChoiceModal').style.display = 'none';
+    if (docId) {
+      openQuoteModal(docId);
+      // Override the modal title so it says "Edit Quote/Estimate" not "Send"
+      const doc = state.saved.find(d => d.id === docId);
+      const docType = doc?.quote?.type || doc?.type || 'Quote';
+      const titleEl = document.getElementById('quoteModalTitle');
+      if (titleEl) titleEl.textContent = 'Edit ' + docType;
+    }
+  });
+  document.getElementById('beforePhotosInput')?.addEventListener('change', e => handlePhotoUpload(e, 'before'));
+  document.getElementById('afterPhotosInput')?.addEventListener('change', e => handlePhotoUpload(e, 'after'));
 
   // Close on overlay click
   [document.getElementById('previewModal'),
+   document.getElementById('quoteModal'),
    document.getElementById('invoiceModal'),
    document.getElementById('receiptModal'),
-   document.getElementById('markPaidModal')].forEach(m => {
+   document.getElementById('markPaidModal'),
+   document.getElementById('editPaymentsModal'),
+   document.getElementById('clientPickerModal'),
+   document.getElementById('editChoiceModal'),
+   document.getElementById('photosModal'),
+   document.getElementById('receiptOutstandingModal'),
+   document.getElementById('previewFirstModal'),
+   document.getElementById('bankDetailsModal'),
+   document.getElementById('customerDashboardModal'),
+   document.getElementById('customerEditChoiceModal'),
+   document.getElementById('customerDetailsEditModal')].forEach(m => {
     m?.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+  });
+
+  document.getElementById('previewEditBtn').addEventListener('click', () => {
+    closePreview();
+    const { type, docId } = previewContext;
+    if (type === 'quote' && docId) {
+      // Open the full job details edit modal for saved estimates/quotes
+      openJobDetailsEdit(docId);
+    } else if (type === 'quote' && !docId) {
+      // New quote in progress — already on page3, nothing needed
+    } else if (type === 'invoice') {
+      openInvoiceModal(docId);
+    } else if (type === 'receipt') {
+      openReceiptModal(docId);
+    }
   });
 
   document.getElementById('previewPrintBtn').addEventListener('click', () => {
     const html = document.getElementById('previewContent').innerHTML;
     printRaw(html);
+  });
+
+  document.getElementById('previewSaveBtn').addEventListener('click', () => {
+    const { type, docId } = previewContext;
+    if (type === 'quote' && !docId) {
+      // Save the current page3 form state as a quote
+      closePreview();
+      saveQuote();
+      return;
+    }
+    // Modal flows: save edits to doc without sending
+    if (type === 'quote' && docId) {
+      const doc = state.saved.find(d => d.id === docId);
+      if (doc) {
+        const quoteData = collectQuoteSendForm();
+        Object.assign(doc, applyDocEdits(doc, quoteData));
+        save();
+        refreshSavedDocs();
+      }
+      document.getElementById('quoteModal').style.display = 'none';
+    } else if (type === 'invoice') {
+      const doc = state.saved.find(d => d.id === activeDocId);
+      if (doc) {
+        const invData = collectInvoiceForm();
+        Object.assign(doc, applyDocEdits(doc, invData));
+        doc.invoiceSent    = true;
+        doc.invoiceRef     = invData.invRef;
+        doc.invoiceDueDate = invData.dueDate || '';
+        save();
+        refreshSavedDocs();
+      }
+      document.getElementById('invoiceModal').style.display = 'none';
+    } else if (type === 'receipt') {
+      const doc = state.saved.find(d => d.id === activeDocId);
+      if (doc) {
+        const recData = collectReceiptForm();
+        Object.assign(doc, applyDocEdits(doc, recData));
+        if (recData.recRef) doc.receiptRef = recData.recRef;
+        recordReceiptPayment(doc, recData);
+        save();
+        refreshSavedDocs();
+      }
+      document.getElementById('receiptModal').style.display = 'none';
+    }
+    closePreview();
+    showSavedPopup("I've saved that.");
   });
 
   document.getElementById('previewSendBtn').addEventListener('click', () => {
@@ -1638,56 +2340,227 @@ function setupModals() {
     sendDocRaw(wrapped, 'document.html');
   });
 
+  // Quote modal
+  document.getElementById('quotePreviewBtn').addEventListener('click', () => {
+    const doc = getActiveQuoteDoc();
+    if (!doc) return;
+    const quoteData = collectQuoteSendForm();
+    quotePreviewed = true;
+    openPreview(buildDocHtml(applyDocEdits(doc, quoteData), 'quote', quoteData), 'quote', doc.id || null);
+  });
+  document.getElementById('quoteSendBtn').addEventListener('click', () => {
+    if (!quotePreviewed && !localStorage.getItem(KEY_PREVIEW_FIRST_SUPPRESSED)) {
+      pendingPreviewSend = previewFirst => {
+        if (previewFirst) {
+          document.getElementById('quotePreviewBtn').click();
+        } else {
+          sendQuoteFromModal();
+        }
+      };
+      document.getElementById('previewFirstModal').style.display = 'flex';
+      return;
+    }
+    sendQuoteFromModal();
+  });
+
+  function sendQuoteFromModal() {
+    const doc = getActiveQuoteDoc();
+    if (!doc) return;
+    const quoteData = collectQuoteSendForm();
+    const editedDoc = applyDocEdits(doc, quoteData);
+    const html = buildDocHtml(editedDoc, 'quote', quoteData);
+    if (activeDocId) {
+      const savedDoc = state.saved.find(d => d.id === activeDocId);
+      if (savedDoc) {
+        Object.assign(savedDoc, editedDoc);
+        save();
+        refreshSavedDocs();
+      }
+    }
+    document.getElementById('quoteModal').style.display = 'none';
+    sendDoc(html, getDocFilenameFromRef(quoteData.ref || editedDoc.ref || 'quote'));
+    toast('Quote sent!', 'success');
+  }
+
   // Invoice modal
   document.getElementById('invPreviewBtn').addEventListener('click', () => {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
     const invData = collectInvoiceForm();
-    openPreview(buildDocHtml(doc, 'invoice', invData), 'invoice');
+    openPreview(buildDocHtml(applyDocEdits(doc, invData), 'invoice', invData), 'invoice');
   });
   document.getElementById('invSendBtn').addEventListener('click', () => {
+    sendInvoiceFromModal();
+  });
+
+  function sendInvoiceFromModal() {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
     const invData = collectInvoiceForm();
-    const html = buildDocHtml(doc, 'invoice', invData);
-    doc.invoiceSent = true;
-    doc.invoiceRef  = invData.invRef;
+    const editedDoc = applyDocEdits(doc, invData);
+    const html = buildDocHtml(editedDoc, 'invoice', invData);
+    Object.assign(doc, editedDoc);
+    doc.invoiceSent    = true;
+    doc.invoiceRef     = invData.invRef;
+    doc.invoiceDueDate = invData.dueDate || '';   // persisted for overdue tracking
     save();
     refreshSavedDocs();
     document.getElementById('invoiceModal').style.display = 'none';
     sendDoc(html, getDocFilenameFromRef(invData.invRef || 'invoice'));
     toast('Invoice sent!', 'success');
-  });
+  }
 
   // Receipt modal
   document.getElementById('recPreviewBtn').addEventListener('click', () => {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
     const recData = collectReceiptForm();
-    openPreview(buildDocHtml(doc, 'receipt', recData), 'receipt');
+    receiptPreviewed = true;
+    openPreview(buildDocHtml(applyDocEdits(doc, recData), 'receipt', recData), 'receipt');
   });
   document.getElementById('recSendBtn').addEventListener('click', () => {
+    if (!receiptPreviewed && !localStorage.getItem(KEY_PREVIEW_FIRST_SUPPRESSED)) {
+      pendingPreviewSend = previewFirst => {
+        if (previewFirst) {
+          document.getElementById('recPreviewBtn').click();
+        } else {
+          sendReceiptFromModal();
+        }
+      };
+      document.getElementById('previewFirstModal').style.display = 'flex';
+      return;
+    }
+    sendReceiptFromModal();
+  });
+
+  function sendReceiptFromModal() {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
     const recData = collectReceiptForm();
+    const editedDoc = applyDocEdits(doc, recData);
+    Object.assign(doc, editedDoc);
+    // Persist the receipt ref so re-opens reuse the same number
+    if (recData.recRef) doc.receiptRef = recData.recRef;
+    recordReceiptPayment(doc, recData);
     const html = buildDocHtml(doc, 'receipt', recData);
+    save();
+    refreshSavedDocs();
     sendDoc(html, 'receipt.html');
     document.getElementById('receiptModal').style.display = 'none';
     toast('Receipt sent!', 'success');
+  }
+
+  // Quote modal — Edit (go to full page3 builder) and Save (save without sending)
+  document.getElementById('quoteEditBtn')?.addEventListener('click', () => {
+    document.getElementById('quoteModal').style.display = 'none';
+    if (activeDocId) {
+      editDoc(activeDocId);
+    }
+  });
+  document.getElementById('quoteSaveBtn')?.addEventListener('click', () => {
+    const doc = getActiveQuoteDoc();
+    if (!doc) return;
+    const quoteData = collectQuoteSendForm();
+    const editedDoc = applyDocEdits(doc, quoteData);
+    if (activeDocId) {
+      const savedDoc = state.saved.find(d => d.id === activeDocId);
+      if (savedDoc) {
+        Object.assign(savedDoc, editedDoc);
+        save();
+        refreshSavedDocs();
+      }
+    }
+    document.getElementById('quoteModal').style.display = 'none';
+    showSavedPopup("I've saved that.");
   });
 
-  // Money In
+  // Invoice modal — Edit (open quoteModal for same doc) and Save (save without sending)
+  document.getElementById('invEditBtn')?.addEventListener('click', () => {
+    document.getElementById('invoiceModal').style.display = 'none';
+    if (activeDocId) openQuoteModal(activeDocId);
+  });
+  document.getElementById('invSaveBtn')?.addEventListener('click', () => {
+    const doc = state.saved.find(d => d.id === activeDocId);
+    if (!doc) return;
+    const invData = collectInvoiceForm();
+    Object.assign(doc, applyDocEdits(doc, invData));
+    doc.invoiceRef      = invData.invRef;
+    doc.invoiceDueDate  = invData.dueDate || '';
+    doc.invoicePayMethods = invData.payMethods;
+    save();
+    refreshSavedDocs();
+    document.getElementById('invoiceModal').style.display = 'none';
+    // Return to preview with updated invoice
+    const html = buildDocHtml(doc, 'invoice', invData);
+    openPreview(html, 'invoice', activeDocId);
+    showSavedPopup("I've saved that.");
+  });
+
+  // Receipt modal — Edit (open quoteModal for same doc) and Save (save without sending)
+  document.getElementById('recEditBtn')?.addEventListener('click', () => {
+    document.getElementById('receiptModal').style.display = 'none';
+    if (activeDocId) openReceiptModal(activeDocId);
+  });
+  document.getElementById('recSaveBtn')?.addEventListener('click', () => {
+    const doc = state.saved.find(d => d.id === activeDocId);
+    if (!doc) return;
+    const recData = collectReceiptForm();
+    Object.assign(doc, applyDocEdits(doc, recData));
+    if (recData.recRef)    doc.receiptRef    = recData.recRef;
+    if (recData.date)      doc.receiptDate   = recData.date;
+    if (recData.method)    doc.receiptMethod = recData.method;
+    save();
+    refreshSavedDocs();
+    document.getElementById('receiptModal').style.display = 'none';
+    // Return to preview with updated receipt
+    const html = buildDocHtml(doc, 'receipt', recData);
+    openPreview(html, 'receipt', activeDocId);
+    showSavedPopup("I've saved that.");
+  });
+
+  // Add Payment button inside editPaymentsModal
+  document.getElementById('addPaymentBtn')?.addEventListener('click', () => {
+    const doc = state.saved.find(d => d.id === activeDocId);
+    if (!doc) return;
+    const amount = parseFloat(document.getElementById('epAddAmount').value) || 0;
+    const date   = document.getElementById('epAddDate').value || todayStr();
+    if (!amount) { toast('Please enter an amount.', 'error'); return; }
+    if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+    doc.payments.push({ amount, date });
+    recalcDocPayments(doc);
+    save();
+    refreshSavedDocs();
+    renderEditPaymentsList(doc);
+    document.getElementById('epAddAmount').value = '';
+    setVal('epAddDate', todayStr());
+    toast('Payment added.', 'success');
+  });
+
+  // Money In — push new payment to payments array
   document.getElementById('confirmMarkPaidBtn').addEventListener('click', () => {
     const doc = state.saved.find(d => d.id === activeDocId);
     if (!doc) return;
-    const newPayment  = parseFloat(getVal('mpAmount')) || 0;
-    doc.paidAmount    = (doc.paidAmount || 0) + newPayment;
-    doc.paidDate      = getVal('mpDate') || todayStr();
-    doc.paid          = doc.paidAmount >= (doc.total || 0);
+    const amount = parseFloat(getVal('mpAmount')) || 0;
+    const date   = getVal('mpDate') || todayStr();
+    if (amount <= 0) { toast('Enter an amount received.', 'error'); return; }
+    // Migrate legacy single-payment docs
+    if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+    doc.payments.push({ amount, date });
+    recalcDocPayments(doc);
     save();
     refreshSavedDocs();
     document.getElementById('markPaidModal').style.display = 'none';
-    toast(doc.paid ? 'Fully paid — nice one!' : `Payment of ${fmtPrice(newPayment)} recorded.`, 'success');
+    // Return to customer dashboard if it was open when Money In was triggered
+    if (activeCustomerGroup) {
+      try {
+        const groups = buildCustomerGroups();
+        const updatedGroup = groups.find(g => g.docs.some(d => d.id === activeDocId)) || activeCustomerGroup;
+        activeCustomerGroup = updatedGroup;
+        document.getElementById('customerDashboardModal').style.display = 'flex';
+        renderSingleCustomerDashboard(updatedGroup, groups);
+      } catch(e) { console.error('Dashboard re-render error:', e); }
+    }
+    showSavedPopup(doc.paid ? 'Brilliant, that one is now paid in full.' : "I've saved that payment.");
   });
 }
 
@@ -1696,31 +2569,367 @@ let previewContext = { type: 'quote', docId: null };
 function openPreview(html, type, docId = null) {
   previewContext = { type, docId };
   document.getElementById('previewContent').innerHTML = html;
-  document.getElementById('previewModal').style.display = 'flex';
+  const modal = document.getElementById('previewModal');
+  modal.classList.add('modal-front');
+  modal.style.display = 'flex';
 }
 
 function closePreview() {
-  document.getElementById('previewModal').style.display = 'none';
+  const modal = document.getElementById('previewModal');
+  modal.style.display = 'none';
+  modal.classList.remove('modal-front');
+}
+
+/* ===== CLIENT PICKER (New Invoice / New Receipt from menu) ===== */
+function openClientPicker(mode) {
+  const titleEl   = document.getElementById('clientPickerTitle');
+  const listEl    = document.getElementById('clientPickerList');
+  const warningEl = document.getElementById('clientPickerWarning');
+
+  titleEl.textContent = mode === 'invoice'
+    ? `Who would you like to invoice ${traderFirstName()}?`
+    : `Who is this receipt for ${traderFirstName()}?`;
+  listEl.dataset.mode = mode;
+  warningEl.style.display = 'none';
+  warningEl.innerHTML = '';
+
+  const docs = [...state.saved].sort((a, b) => {
+    const aq = a.quote || {};
+    const bq = b.quote || {};
+    return (aq.custLastName || '').localeCompare(bq.custLastName || '') ||
+      (aq.custFirstName || '').localeCompare(bq.custFirstName || '');
+  });
+
+  if (!docs.length) {
+    listEl.innerHTML = '<p class="cp-empty">No saved jobs yet - create an estimate or quote first.</p>';
+    document.getElementById('clientPickerModal').style.display = 'flex';
+    return;
+  }
+
+  listEl.innerHTML = docs.map(doc => {
+    const payments    = getDocPayments(doc);
+    const totalPaid   = payments.reduce((s, p) => s + (p.amount || 0), 0);
+    const statusClass = doc.paid ? 'paid' : doc.invoiceSent ? 'invoiced' : (doc.type || 'estimate').toLowerCase();
+    const statusLabel = doc.paid ? 'Paid' : doc.invoiceSent ? 'Invoiced' : (doc.type || 'Estimate');
+    const jobDesc     = doc.quote?.items?.[0]?.name || doc.ref || 'Job';
+    return `
+      <button type="button" class="cp-row" data-id="${doc.id}">
+        <div class="cp-row-main">
+          <span class="cp-name">${esc(doc.custName || 'Unknown')}</span>
+          <span class="cp-job">${esc(jobDesc)}</span>
+        </div>
+        <div class="cp-row-right">
+          <span class="cp-total">${fmtPrice(doc.total || 0)}</span>
+          <span class="type-badge ${statusClass}">${statusLabel}</span>
+        </div>
+      </button>`;
+  }).join('');
+
+  listEl.querySelectorAll('.cp-row').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const docId = btn.dataset.id;
+      const doc   = state.saved.find(d => d.id === docId);
+      if (!doc) return;
+
+      if (mode === 'invoice') {
+        document.getElementById('clientPickerModal').style.display = 'none';
+        openInvoiceModal(docId);
+      } else {
+        // Receipt mode — warn if not fully paid
+        const payments  = getDocPayments(doc);
+        const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+        if (totalPaid === 0) {
+          showPickerWarning(docId,
+            `⚠️ No payment has been recorded for ${esc(doc.custName || 'this client')} yet. Do you still want to create a receipt?`);
+        } else if (!doc.paid) {
+          showPickerWarning(docId,
+            `⚠️ ${esc(doc.custName || 'This client')} has only paid ${fmtPrice(totalPaid)} of ${fmtPrice(doc.total || 0)}. Do you still want to create a receipt?`);
+        } else {
+          document.getElementById('clientPickerModal').style.display = 'none';
+          openReceiptModal(docId);
+        }
+      }
+    });
+  });
+
+  document.getElementById('clientPickerModal').style.display = 'flex';
+}
+
+function showPickerWarning(docId, message) {
+  const warningEl = document.getElementById('clientPickerWarning');
+  warningEl.style.display = 'block';
+  warningEl.innerHTML = `
+    <p class="cp-warning-msg">${message}</p>
+    <div class="cp-warning-actions">
+      <button type="button" class="btn btn-outline btn-sm" id="cpWarnCancel">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="cpWarnConfirm">Create Receipt</button>
+    </div>`;
+  warningEl.querySelector('#cpWarnCancel').addEventListener('click', () => {
+    warningEl.style.display = 'none';
+  });
+  warningEl.querySelector('#cpWarnConfirm').addEventListener('click', () => {
+    document.getElementById('clientPickerModal').style.display = 'none';
+    openReceiptModal(docId);
+  });
+  warningEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function previewReceipt(docId) {
+  activeDocId = docId;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  const payments  = getDocPayments(doc);
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const recRef = doc.receiptRef || nextRef('REC', KEY_REC);
+  const html = buildDocHtml(doc, 'receipt', {
+    recRef,
+    date:   doc.receiptDate || todayStr(),
+    amount: totalPaid > 0 ? totalPaid : (doc.total || 0),
+    method: doc.receiptMethod || ''
+  });
+  openPreview(html, 'receipt', docId);
+}
+
+function handleReceiptRequest(docId) {
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  if (doc.paid) {
+    previewReceipt(docId);
+    return;
+  }
+  // Not fully paid — warn with personalised message
+  pendingReceiptDocId = docId;
+  const first = (doc.quote?.custFirstName || '').trim();
+  const msg = document.getElementById('outstandingMsg');
+  if (msg) {
+    msg.textContent = first
+      ? `${first}, the payment history shows funds outstanding. Do you still wish to send a receipt anyway?`
+      : 'The payment history shows funds outstanding. Do you still wish to send a receipt anyway?';
+  }
+  document.getElementById('receiptOutstandingModal').style.display = 'flex';
+}
+
+function closeOutstandingReceipt() {
+  pendingReceiptDocId = null;
+  document.getElementById('receiptOutstandingModal').style.display = 'none';
+}
+
+function openQuoteModalFromCurrentForm() {
+  const q = collectQuoteState();
+  q.items = [...state.quote.items];
+  if (!q.custLastName && !q.custFirstName) {
+    toast('Please add a customer name.', 'error');
+    document.getElementById('custFirstName').focus();
+    return;
+  }
+  activeDocId = null;
+  activeQuoteDraftDoc = {
+    id: null,
+    quote: q,
+    company: { ...state.company },
+    custName: buildCustName(q),
+    total: calcTotal(q),
+    type: q.type,
+    date: q.date,
+    ref: q.ref,
+    photos: { before: [], after: [] }
+  };
+  populateQuoteSendModal(activeQuoteDraftDoc);
+}
+
+function openQuoteModal(docId) {
+  activeDocId = docId;
+  activeQuoteDraftDoc = null;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  // Show a live preview of the estimate/quote — Edit button will open job details edit
+  const html = buildDocHtml(doc, 'quote');
+  openPreview(html, 'quote', docId);
+}
+
+function populateQuoteSendModal(doc) {
+  quotePreviewed = false;
+  const q = doc.quote || {};
+  const label = q.type || doc.type || 'Quote';
+  document.getElementById('quoteModalTitle').textContent = label;
+  setVal('quoteCustFirst', q.custFirstName || '');
+  setVal('quoteCustLast', q.custLastName || '');
+  setVal('quoteRef', q.ref || doc.ref || '');
+  setVal('quoteSendDate', q.date || doc.date || todayStr());
+  setVal('quoteItemsText', (q.items || []).map(i => `${i.name}, ${Number(i.unitPrice || 0).toFixed(2)}`).join('\n'));
+  setVal('quoteTotalOverride', (doc.total || calcTotal(q) || 0).toFixed(2));
+  setVal('quoteSendNotes', q.notes || '');
+  document.getElementById('quoteIncludePhotos').checked = false;
+  document.getElementById('quoteModal').style.display = 'flex';
+}
+
+function getActiveQuoteDoc() {
+  if (activeDocId) {
+    return state.saved.find(d => d.id === activeDocId) || activeQuoteDraftDoc || null;
+  }
+  return activeQuoteDraftDoc || null;
+}
+
+function previewInvoice(docId) {
+  activeDocId = docId;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  const invRef  = doc.invoiceRef || doc.ref || nextRef('INV', KEY_INV);
+  const dueDate = doc.invoiceDueDate || addDays(todayStr(), 30);
+  const html = buildDocHtml(doc, 'invoice', { invRef, invDate: todayStr(), dueDate });
+  openPreview(html, 'invoice', docId);
 }
 
 function openInvoiceModal(docId) {
   activeDocId = docId;
-  const invRef = nextRef('INV', KEY_INV);
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  const invRef = doc.invoiceRef || doc.ref || nextRef('INV', KEY_INV);
+  const q = doc.quote || {};
   setVal('invRef',     invRef);
   setVal('invDate',    todayStr());
-  setVal('invDueDate', addDays(todayStr(), 30));
+  setVal('invDueDate', doc.invoiceDueDate || addDays(todayStr(), 30));
+  setVal('invCustFirst', q.custFirstName || '');
+  setVal('invCustLast', q.custLastName || '');
+  setVal('invItemsText', (q.items || []).map(i => `${i.name}, ${Number(i.unitPrice || 0).toFixed(2)}`).join('\n'));
+  setVal('invTotalOverride', (doc.total || 0).toFixed(2));
+  const storedMethods = Array.isArray(doc.invoicePayMethods) ? doc.invoicePayMethods
+    : (doc.invoicePayMethod ? [doc.invoicePayMethod] : []);
+  document.querySelectorAll('input[name="invPayMethod"]').forEach(cb => {
+    cb.checked = storedMethods.includes(cb.value);
+  });
+  document.getElementById('invIncludePhotos').checked = false;
   setVal('invNotes',   '');
   document.getElementById('invoiceModal').style.display = 'flex';
 }
 
 function openReceiptModal(docId) {
   activeDocId = docId;
+  receiptPreviewed = false;
   const doc = state.saved.find(d => d.id === docId);
-  setVal('recAmount', doc ? doc.total.toFixed(2) : '');
+  if (!doc) return;
+  const payments  = getDocPayments(doc);
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const q = doc.quote || {};
+  // Reuse existing receiptRef if the receipt was already sent; otherwise generate a new one
+  const recRef = doc.receiptRef || nextRef('REC', KEY_REC);
+  setVal('recRef',     recRef);
+  setVal('recCustFirst', q.custFirstName || '');
+  setVal('recCustLast', q.custLastName || '');
+  setVal('recAmount', (totalPaid > 0 ? totalPaid : (doc.total || 0)).toFixed(2));
   setVal('recDate',   todayStr());
-  setVal('recMethod', 'Bank Transfer');
+  // Pre-fill payment split checkboxes and amounts
+  const storedSplit = Array.isArray(doc.receiptPaySplit) ? doc.receiptPaySplit
+    : (doc.receiptMethod ? [{ method: doc.receiptMethod, amount: totalPaid || doc.total || 0 }] : []);
+  document.querySelectorAll('input[name="recPayMethod"]').forEach(cb => {
+    const entry = storedSplit.find(s => s.method === cb.value);
+    cb.checked = !!entry;
+    const amtEl = document.querySelector(`input[name="recPayAmt"][data-method="${cb.value}"]`);
+    if (amtEl) amtEl.value = entry ? (entry.amount || '') : '';
+  });
+  document.getElementById('recIncludePhotos').checked = false;
   setVal('recNotes',  '');
   document.getElementById('receiptModal').style.display = 'flex';
+}
+
+function refreshActiveDashboard() {
+  if (!activeCustomerGroup) return;
+  try {
+    const groups = buildCustomerGroups();
+    const updated = groups.find(g => g.docs.some(d => d.id === activeDocId)) || activeCustomerGroup;
+    activeCustomerGroup = updated;
+    renderSingleCustomerDashboard(updated, groups);
+  } catch(e) { console.error('Dashboard refresh error:', e); }
+}
+
+function renderMpPrevInfo() {
+  const doc = state.saved.find(d => d.id === activeDocId);
+  if (!doc) return;
+  // Ensure doc.payments is always a real array (migrate legacy scalar)
+  if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+  const payments  = doc.payments;
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const total     = doc.total || 0;
+  const remaining = Math.max(0, total - totalPaid);
+  const prevInfo  = document.getElementById('mpPrevInfo');
+  if (!prevInfo) return;
+
+  if (payments.length === 0) {
+    prevInfo.style.display = 'none';
+    return;
+  }
+
+  prevInfo.style.display = 'block';
+  prevInfo.innerHTML =
+    payments.map((p, i) => `
+      <div class="mp-edit-row">
+        <span class="mp-edit-label">Payment ${i + 1}</span>
+        <div class="mp-edit-fields">
+          <div class="input-pfx mp-edit-pfx">
+            <span class="pfx-symbol">£</span>
+            <input type="number" class="mp-edit-val" data-idx="${i}" value="${p.amount != null ? p.amount : ''}" min="0" step="any" placeholder="0.00">
+          </div>
+          <input type="date" class="mp-edit-date" data-idx="${i}" value="${p.date || ''}">
+          <button type="button" class="mp-delete-btn" data-idx="${i}" aria-label="Delete payment ${i + 1}">×</button>
+        </div>
+      </div>`).join('') +
+    `<div class="mp-prev-row mp-totals-divider">
+       <span>Total paid:</span><span><strong>${fmtPrice(totalPaid)}</strong></span>
+     </div>
+     <div class="mp-prev-row">
+       <span>Still outstanding:</span><span><strong style="color:var(--walnut)">${fmtPrice(remaining)}</strong></span>
+     </div>`;
+
+  // Wire amount edits — save on blur so typing isn't interrupted
+  prevInfo.querySelectorAll('.mp-edit-val').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const freshDoc = state.saved.find(d => d.id === activeDocId);
+      if (!freshDoc) return;
+      const idx = parseInt(inp.dataset.idx);
+      if (!freshDoc.payments[idx]) return;
+      freshDoc.payments[idx].amount = parseFloat(inp.value) || 0;
+      recalcDocPayments(freshDoc);
+      save();
+      refreshSavedDocs();
+      refreshActiveDashboard();
+      renderMpPrevInfo();
+    });
+  });
+
+  // Wire date edits
+  prevInfo.querySelectorAll('.mp-edit-date').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const freshDoc = state.saved.find(d => d.id === activeDocId);
+      if (!freshDoc) return;
+      const idx = parseInt(inp.dataset.idx);
+      if (!freshDoc.payments[idx]) return;
+      freshDoc.payments[idx].date = inp.value;
+      recalcDocPayments(freshDoc);
+      save();
+      refreshSavedDocs();
+      refreshActiveDashboard();
+      renderMpPrevInfo();
+    });
+  });
+
+  // Wire delete buttons
+  prevInfo.querySelectorAll('.mp-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const freshDoc = state.saved.find(d => d.id === activeDocId);
+      if (!freshDoc) return;
+      const idx = parseInt(btn.dataset.idx);
+      freshDoc.payments.splice(idx, 1);
+      recalcDocPayments(freshDoc);
+      save();
+      refreshSavedDocs();
+      refreshActiveDashboard();
+      renderMpPrevInfo();
+      // Re-prefill the new-payment amount with updated remaining
+      const updatedPaid = freshDoc.payments.reduce((s, p) => s + (p.amount || 0), 0);
+      const updatedRemaining = Math.max(0, (freshDoc.total || 0) - updatedPaid);
+      setVal('mpAmount', updatedRemaining > 0 ? updatedRemaining.toFixed(2) : '');
+    });
+  });
 }
 
 function openMarkPaid(docId) {
@@ -1728,44 +2937,940 @@ function openMarkPaid(docId) {
   const doc = state.saved.find(d => d.id === docId);
   if (!doc) return;
 
-  const total      = doc.total || 0;
-  const alreadyPaid = doc.paidAmount || 0;
-  const remaining  = Math.max(0, total - alreadyPaid);
-  const prevInfo   = document.getElementById('mpPrevInfo');
+  const titleEl = document.getElementById('markPaidTitle');
+  if (titleEl) titleEl.textContent = 'Money In';
 
-  // Show previous payment summary if a partial payment already exists
-  if (alreadyPaid > 0 && prevInfo) {
-    prevInfo.style.display = 'block';
-    prevInfo.innerHTML = `
-      <div class="mp-prev-row"><span>Previously paid:</span><span><strong>${fmtPrice(alreadyPaid)}</strong>${doc.paidDate ? ' on ' + formatDate(doc.paidDate) : ''}</span></div>
-      <div class="mp-prev-row"><span>Still outstanding:</span><span><strong>${fmtPrice(remaining)}</strong></span></div>
-    `;
-  } else if (prevInfo) {
-    prevInfo.style.display = 'none';
-  }
+  renderMpPrevInfo();
 
-  // Pre-fill with remaining amount (or full total if no previous payment)
+  // Pre-fill the new-payment row with remaining balance (or total if no payments yet)
+  if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+  const totalPaid = doc.payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const total     = doc.total || 0;
+  const remaining = Math.max(0, total - totalPaid);
   setVal('mpAmount', (remaining > 0 ? remaining : total).toFixed(2));
   setVal('mpDate', todayStr());
   document.getElementById('markPaidModal').style.display = 'flex';
 }
 
+function openEditPayments(docId) {
+  activeDocId = docId;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  // Migrate legacy single-payment docs
+  if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+  renderEditPaymentsList(doc);
+  // Pre-fill date for add payment form
+  setVal('epAddDate', todayStr());
+  document.getElementById('epAddAmount').value = '';
+  document.getElementById('editPaymentsModal').style.display = 'flex';
+}
+
+function renderEditPaymentsList(doc) {
+  const listEl = document.getElementById('editPaymentsList');
+  if (!listEl) return;
+  const payments    = doc.payments || [];
+  const totalPaid   = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const outstanding = Math.max(0, (doc.total || 0) - totalPaid);
+
+  if (!payments.length) {
+    listEl.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px 0;font-size:0.9rem">No payments recorded.</p>';
+    return;
+  }
+
+  listEl.innerHTML =
+    payments.map((p, i) => `
+      <div class="edit-payment-row">
+        <span class="ep-amount">${fmtPrice(p.amount)}</span>
+        <span class="ep-date">${formatDate(p.date)}</span>
+        <button type="button" class="btn-delete-payment" data-idx="${i}" aria-label="Delete payment ${i + 1}">✕</button>
+      </div>`).join('') +
+    `<div class="ep-summary-row">
+       <span>Total paid</span><strong>${fmtPrice(totalPaid)}</strong>
+     </div>
+     ${outstanding > 0 ? `<div class="ep-summary-row ep-outstanding">
+       <span>Outstanding</span><strong>${fmtPrice(outstanding)}</strong>
+     </div>` : ''}`;
+
+  listEl.querySelectorAll('.btn-delete-payment').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      doc.payments.splice(idx, 1);
+      recalcDocPayments(doc);
+      save();
+      refreshSavedDocs();
+      renderEditPaymentsList(doc);
+    });
+  });
+}
+
 function collectInvoiceForm() {
+  const payMethods = [...document.querySelectorAll('input[name="invPayMethod"]:checked')].map(cb => cb.value);
   return {
     invRef:    getVal('invRef'),
     invDate:   getVal('invDate'),
     dueDate:   getVal('invDueDate'),
+    custFirstName: getVal('invCustFirst'),
+    custLastName:  getVal('invCustLast'),
+    itemsText: getVal('invItemsText'),
+    totalOverride: getVal('invTotalOverride'),
+    payMethods,
+    payMethod: payMethods[0] || '',   // legacy single-value compat
+    includePhotos: document.getElementById('invIncludePhotos')?.checked || false,
     notes:     getVal('invNotes')
   };
 }
 
-function collectReceiptForm() {
+function collectQuoteSendForm() {
   return {
-    amount:  getVal('recAmount'),
-    date:    getVal('recDate'),
-    method:  getVal('recMethod'),
-    notes:   getVal('recNotes')
+    custFirstName: getVal('quoteCustFirst'),
+    custLastName:  getVal('quoteCustLast'),
+    ref: getVal('quoteRef'),
+    date: getVal('quoteSendDate'),
+    itemsText: getVal('quoteItemsText'),
+    totalOverride: getVal('quoteTotalOverride'),
+    quoteNotes: getVal('quoteSendNotes'),
+    includePhotos: document.getElementById('quoteIncludePhotos')?.checked || false
   };
+}
+
+function collectReceiptForm() {
+  const paySplit = [];
+  document.querySelectorAll('input[name="recPayMethod"]:checked').forEach(cb => {
+    const amtEl = document.querySelector(`input[name="recPayAmt"][data-method="${cb.value}"]`);
+    paySplit.push({ method: cb.value, amount: parseFloat(amtEl?.value) || 0 });
+  });
+  const method = paySplit.map(p => p.method).join(', ');
+  return {
+    recRef:        getVal('recRef'),
+    custFirstName: getVal('recCustFirst'),
+    custLastName:  getVal('recCustLast'),
+    amount:        getVal('recAmount'),
+    date:          getVal('recDate'),
+    paySplit,
+    method,        // flattened string for legacy compat
+    includePhotos: document.getElementById('recIncludePhotos')?.checked || false,
+    notes:         getVal('recNotes')
+  };
+}
+
+function applyDocEdits(doc, data = {}) {
+  const edited = {
+    ...doc,
+    quote: {
+      ...(doc.quote || {}),
+      items: ((doc.quote || {}).items || []).map(i => ({ ...i }))
+    }
+  };
+  const q = edited.quote;
+  if ('custFirstName' in data) q.custFirstName = data.custFirstName || '';
+  if ('custLastName' in data) q.custLastName = data.custLastName || '';
+  if ('ref' in data) {
+    q.ref = data.ref || '';
+    edited.ref = q.ref;
+  }
+  if ('date' in data) {
+    q.date = data.date || '';
+    edited.date = q.date;
+  }
+  if ('quoteNotes' in data) q.notes = data.quoteNotes || '';
+  edited.custName = buildCustName(q);
+
+  if (data.itemsText != null) {
+    const parsed = parseEditableItems(data.itemsText);
+    if (parsed.length) q.items = parsed;
+  }
+  if (data.totalOverride !== undefined && data.totalOverride !== '') {
+    const total = parseFloat(data.totalOverride);
+    if (!isNaN(total)) edited.total = total;
+  } else {
+    edited.total = calcTotal(q);
+  }
+  return edited;
+}
+
+function parseEditableItems(text) {
+  return String(text || '').split(/\r?\n/).map(line => {
+    const parts = line.split(',');
+    const name = (parts[0] || '').trim();
+    const price = parseFloat((parts[1] || '').replace(/[£,]/g, '').trim());
+    if (!name) return null;
+    return { id: uid(), name, unitPrice: isNaN(price) ? 0 : price, unit: '', qty: 1 };
+  }).filter(Boolean);
+}
+
+function recordReceiptPayment(doc, recData) {
+  const amount = parseFloat(recData.amount) || 0;
+  if (amount <= 0) return;
+  if (!Array.isArray(doc.payments)) doc.payments = getDocPayments(doc);
+  if (doc.total && amount >= doc.total) {
+    doc.payments = [{ amount: doc.total, date: recData.date || todayStr(), method: recData.method || '' }];
+    recalcDocPayments(doc);
+    return;
+  }
+  const exists = doc.payments.some(p =>
+    Math.abs((p.amount || 0) - amount) < 0.01 &&
+    (p.date || '') === (recData.date || todayStr()) &&
+    (p.method || '') === (recData.method || '')
+  );
+  if (!exists) doc.payments.push({ amount, date: recData.date || todayStr(), method: recData.method || '' });
+  recalcDocPayments(doc);
+}
+
+function openEditChoice(docId) {
+  activeEditChoiceDocId = docId;
+  document.getElementById('editChoiceModal').style.display = 'flex';
+}
+
+function closePhotosAndReturn() {
+  document.getElementById('photosModal').style.display = 'none';
+  // If photos were opened from the customer dashboard, go back to it
+  if (activeCustomerGroup) {
+    const groups = buildCustomerGroups();
+    const group = groups.find(g => g.docs.some(d => d.id === activePhotoDocId)) || activeCustomerGroup;
+    activeCustomerGroup = group;
+    document.getElementById('customerDashboardModal').style.display = 'flex';
+    renderSingleCustomerDashboard(group, groups);
+  }
+}
+
+function openPhotosModal(docId) {
+  activePhotoDocId = docId;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  if (!doc.photos) doc.photos = { before: [], after: [] };
+  document.getElementById('beforePhotosInput').value = '';
+  document.getElementById('afterPhotosInput').value = '';
+  renderPhotosPreview(doc);
+  document.getElementById('photosModal').style.display = 'flex';
+}
+
+function handlePhotoUpload(e, which) {
+  const doc = state.saved.find(d => d.id === activePhotoDocId);
+  if (!doc) return;
+  if (!doc.photos) doc.photos = { before: [], after: [] };
+  const files = [...(e.target.files || [])].slice(0, 3);
+  Promise.all(files.map(fileToDataUrl)).then(urls => {
+    doc.photos[which] = urls.slice(0, 3);
+    save();
+    renderPhotosPreview(doc);
+  });
+}
+
+function fileToDataUrl(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => resolve(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotosPreview(doc) {
+  const render = (id, list) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = (list || []).map(src => `<img src="${src}" alt="Job photo">`).join('') ||
+      '<p class="photo-empty">No photos added yet.</p>';
+  };
+  render('beforePhotosPreview', doc.photos?.before || []);
+  render('afterPhotosPreview', doc.photos?.after || []);
+}
+
+function rememberPreviewChoice() {
+  if (document.getElementById('dontShowPreviewFirst')?.checked) {
+    localStorage.setItem(KEY_PREVIEW_FIRST_SUPPRESSED, '1');
+  }
+}
+
+function closePreviewFirstModal() {
+  pendingPreviewSend = null;
+  document.getElementById('previewFirstModal').style.display = 'none';
+}
+
+function createNewCustomerFromPicker() {
+  const mode = document.getElementById('clientPickerList')?.dataset.mode || 'invoice';
+  document.getElementById('clientPickerModal').style.display = 'none';
+  const q = {
+    type: mode === 'invoice' ? 'Invoice' : 'Receipt',
+    custTitle: '', custFirstName: '', custLastName: '',
+    custAddr: '', custPostcode: '', custPhone: '', custEmail: '',
+    date: todayStr(), validFor: '14', validCustom: '',
+    ref: buildRef((parseInt(localStorage.getItem(KEY_REF) || '100') || 100) + 1),
+    items: [{ id: uid(), name: 'Job', unitPrice: 0, unit: '', qty: 1 }],
+    vatRate: '0', vatCustom: '', discount: '0',
+    notes: '', privateNotes: '', selectedTerms: [], customTerms: '',
+    authSig: '', custSig: '', sigDate: ''
+  };
+  const doc = {
+    id: uid(),
+    quote: q,
+    company: { ...state.company },
+    custName: '',
+    total: 0,
+    type: q.type,
+    date: q.date,
+    ref: q.ref,
+    invoiceSent: false,
+    paid: false,
+    paidAmount: 0,
+    paidDate: '',
+    payments: [],
+    photos: { before: [], after: [] }
+  };
+  state.saved.unshift(doc);
+  save();
+  updateSavedBadge();
+  refreshSavedDocs();
+  if (mode === 'receipt') openReceiptModal(doc.id);
+  else openInvoiceModal(doc.id);
+}
+
+function buildPaymentShareText() {
+  const c = state.company;
+  const lines = [];
+  if ((c.payMethods || []).includes('bank')) {
+    lines.push(`Bank Transfer`);
+    if (c.bankAccHolder) lines.push(`Account name: ${c.bankAccHolder}`);
+    if (c.bankName) lines.push(`Bank: ${c.bankName}`);
+    if (c.bankSort) lines.push(`Sort code: ${c.bankSort}`);
+    if (c.bankAcc) lines.push(`Account number: ${c.bankAcc}`);
+  }
+  if ((c.payMethods || []).includes('cash')) lines.push('Cash on completion');
+  if ((c.payMethods || []).includes('paypal') && c.paypalRef) lines.push(`PayPal: ${c.paypalRef}`);
+  if ((c.payMethods || []).includes('other') && c.payOther) lines.push(c.payOther);
+  return lines.join('\n') || 'No payment details saved yet.';
+}
+
+function openBankDetailsModal() {
+  setVal('bankDetailsShareText', buildPaymentShareText());
+  document.getElementById('bankDetailsModal').style.display = 'flex';
+}
+
+async function copyBankDetails() {
+  const text = getVal('bankDetailsShareText');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Payment details copied.', 'success');
+  } catch {
+    toast('Select the details and copy them.', 'info');
+  }
+}
+
+async function shareBankDetails() {
+  const text = getVal('bankDetailsShareText');
+  if (navigator.share) {
+    try { await navigator.share({ text, title: 'Payment details' }); return; } catch(e) {}
+  }
+  copyBankDetails();
+}
+
+async function shareLexiApp() {
+  const text = 'Estimates, quotes, invoices and receipts - done in minutes, right there on site. Match your brand and look professional, straight from your phone. No faff. No spreadsheets. No sitting at a laptop at 10pm. Worth two minutes of your time - take a look!';
+  const url = 'https://www.lexihandlesit.com';
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Lexi Handles It', text, url }); return; } catch(e) {}
+  }
+  try {
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    toast('Link copied to clipboard.', 'success');
+  } catch {
+    toast('Share is not available on this device.', 'error');
+  }
+}
+
+function openCustomerDashboardForDoc(docId) {
+  const groups = buildCustomerGroups();
+  const group = groups.find(g => g.docs.some(d => d.id === docId));
+  if (!group) return;
+  document.getElementById('customerDashboardModal').style.display = 'flex';
+  renderSingleCustomerDashboard(group, groups);
+}
+
+function openCustomerDashboard() {
+  const body = document.getElementById('customerDashboardBody');
+  if (!state.saved.length) {
+    body.innerHTML = '<p class="cp-empty">No saved customers yet.</p>';
+  } else {
+    renderCustomerSelector(buildCustomerGroups());
+  }
+  document.getElementById('customerDashboardModal').style.display = 'flex';
+}
+
+function getCustomerDisplayName(doc) {
+  const q = doc.quote || {};
+  const built = buildCustName(q).trim();
+  return built || (doc.custName || '').trim() || 'Customer details missing';
+}
+
+function buildCustomerGroups() {
+  const groups = new Map();
+  state.saved.forEach(doc => {
+    const q = doc.quote || {};
+    const name = getCustomerDisplayName(doc);
+    const contact = (q.custEmail || q.custPhone || q.custPostcode || '').trim().toLowerCase();
+    const nameKey = name.toLowerCase();
+    const hasRealName = name !== 'Customer details missing';
+    const key = hasRealName ? `${nameKey}|${contact}` : `missing|${doc.ref || doc.id}`;
+    if (!groups.has(key)) groups.set(key, { name, contact, docs: [] });
+    groups.get(key).docs.push(doc);
+  });
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getCustomerTotals(docs) {
+  const paid = docs.reduce((s, d) => s + getDocPayments(d).reduce((p, x) => p + (x.amount || 0), 0), 0);
+  const total = docs.reduce((s, d) => s + (d.total || 0), 0);
+  const refs = docs.map(d => d.invoiceRef || d.ref || d.quote?.ref || 'No ref').filter(Boolean).join(', ');
+  return { paid, total, outstanding: Math.max(0, total - paid), refs };
+}
+
+function renderCustomerSelector(groups) {
+  const body = document.getElementById('customerDashboardBody');
+  body.innerHTML = `
+    <div class="customer-selector-list">
+      ${groups.map((group, idx) => {
+        const totals = getCustomerTotals(group.docs);
+        return `
+          <button type="button" class="customer-selector-row" data-idx="${idx}">
+            <span class="customer-selector-name">${esc(group.name)}</span>
+            <span class="customer-selector-ref">${esc(totals.refs)}</span>
+            <span class="customer-selector-paid">Paid ${fmtPrice(totals.paid)}</span>
+            <span class="customer-selector-outstanding">Outstanding ${fmtPrice(totals.outstanding)}</span>
+          </button>`;
+      }).join('')}
+    </div>`;
+  body.querySelectorAll('.customer-selector-row').forEach(btn => {
+    btn.addEventListener('click', () => renderSingleCustomerDashboard(groups[parseInt(btn.dataset.idx, 10)], groups));
+  });
+}
+
+function buildCustomerJobSection(d) {
+  const q = d.quote || {};
+  // items may live in q.items or (legacy) d.items
+  const items = (q.items && q.items.length ? q.items : null) || (d.items && d.items.length ? d.items : null) || [];
+  const subtotal = items.reduce((s, i) => s + (i.unitPrice || 0) * (i.qty || 1), 0);
+  const discPct  = parseFloat(q.discount) || 0;
+  const discount = subtotal * discPct / 100;
+  const afterDisc = subtotal - discount;
+  const vatRate  = q.vatRate === 'custom' ? parseFloat(q.vatCustom) || 0 : parseFloat(q.vatRate) || 0;
+  const vatAmt   = afterDisc * vatRate / 100;
+  const payments = getDocPayments(d);
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const outstanding = Math.max(0, (d.total || 0) - totalPaid);
+  const isOverdue = !d.paid && d.invoiceSent && d.invoiceDueDate && todayStr() > d.invoiceDueDate;
+  const statusClass = d.paid ? 'paid' : isOverdue ? 'overdue' : d.invoiceSent ? 'invoiced' : (q.type || 'estimate').toLowerCase();
+  const statusLabel = d.paid ? 'Paid' : isOverdue ? 'Overdue' : d.invoiceSent ? 'Invoiced' : (q.type || 'Estimate');
+  const ref = d.invoiceRef || d.receiptRef || q.ref || d.ref || '-';
+  const docDate = q.date || d.date || '';
+  const photos = d.photos || {};
+  const beforePhotos = photos.before || [];
+  const afterPhotos  = photos.after  || [];
+
+  const itemsHtml = items.length
+    ? items.map(i => `
+        <div class="cdv-item-row">
+          <span class="cdv-item-name">${esc(i.name)}${i.qty > 1 ? ` <span class="cdv-item-qty">×${i.qty}</span>` : ''}</span>
+          <span class="cdv-item-price">${fmtPrice((i.unitPrice || 0) * (i.qty || 1))}</span>
+        </div>`).join('')
+    : '';
+
+  const totalsHtml = `
+    <div class="cdv-totals">
+      ${items.length ? `<div class="cdv-total-row"><span>Subtotal</span><span>${fmtPrice(subtotal)}</span></div>` : ''}
+      ${discount > 0 ? `<div class="cdv-total-row cdv-discount-row"><span>Discount (${discPct}%)</span><span>-${fmtPrice(discount)}</span></div>` : ''}
+      ${vatAmt   > 0 ? `<div class="cdv-total-row cdv-vat-row"><span>VAT (${vatRate}%)</span><span>${fmtPrice(vatAmt)}</span></div>` : ''}
+      <div class="cdv-total-row cdv-grand-total"><span>Total</span><span>${fmtPrice(d.total || 0)}</span></div>
+    </div>`;
+
+  const paymentsHtml = payments.length ? `
+    <div class="cdv-section">
+      <div class="cdv-section-label"><svg class="cdv-icon cdv-icon-label" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Payments</div>
+      ${payments.map((p, i) => `
+        <div class="cdv-payment-row">
+          <span class="cdv-pay-num">Payment ${i + 1}</span>
+          <span class="cdv-pay-date">${formatDate(p.date)}</span>
+          <span class="cdv-pay-amount">${fmtPrice(p.amount)}</span>
+        </div>`).join('')}
+      ${outstanding > 0
+        ? `<div class="cdv-payment-row cdv-outstanding-row"><span class="cdv-pay-num">Outstanding</span><span></span><span class="cdv-pay-amount">${fmtPrice(outstanding)}</span></div>`
+        : `<div class="cdv-paid-stamp">✓ Paid in full</div>`}
+    </div>` : `
+    <div class="cdv-section">
+      <div class="cdv-section-label"><svg class="cdv-icon cdv-icon-label" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Payments</div>
+      <p class="cdv-empty">No payments recorded yet.</p>
+    </div>`;
+
+  const notesHtml = q.notes ? `
+    <div class="cdv-section">
+      <div class="cdv-section-label">📝 Notes to Customer</div>
+      <p class="cdv-note-text">${esc(q.notes)}</p>
+    </div>` : '';
+
+  const privateHtml = q.privateNotes ? `
+    <div class="cdv-section cdv-private">
+      <div class="cdv-section-label">🔒 Private Notes</div>
+      <p class="cdv-note-text">${esc(q.privateNotes)}</p>
+    </div>` : '';
+
+  const photoGroup = (label, list) => list.length ? `
+    <div class="cdv-photo-group">
+      <div class="cdv-photo-label">${label}</div>
+      <div class="cdv-photo-grid">${list.map(src => `<img src="${src}" class="cdv-photo-thumb" alt="${label} photo">`).join('')}</div>
+    </div>` : '';
+  const photosHtml = (beforePhotos.length || afterPhotos.length) ? `
+    <div class="cdv-section">
+      <div class="cdv-section-label">📷 Photos</div>
+      ${photoGroup('Before', beforePhotos)}
+      ${photoGroup('After', afterPhotos)}
+    </div>` : '';
+
+  return `
+    <div class="cdv-job-card">
+      <div class="cdv-job-header">
+        <div class="cdv-job-meta">
+          <span class="cdv-job-ref">${esc(ref)}</span>
+          ${docDate ? `<span class="cdv-job-date">${formatDate(docDate)}</span>` : ''}
+        </div>
+        <span class="type-badge ${statusClass}">${esc(statusLabel)}</span>
+      </div>
+      <div class="cdv-items">${itemsHtml}</div>
+      ${totalsHtml}
+      ${paymentsHtml}
+      ${notesHtml}
+      ${privateHtml}
+      ${photosHtml}
+      <div class="cdv-job-actions">
+        <button type="button" class="btn btn-sm btn-walnut cdv-btn-edit" data-id="${d.id}">✎ Edit</button>
+        <button type="button" class="btn-photo-doc cdv-btn-camera" data-id="${d.id}" title="Before and after photos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+        <button type="button" class="btn-photo-doc cdv-btn-download" title="Download customer dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button type="button" class="btn btn-sm btn-danger-outline cdv-btn-delete" data-id="${d.id}">Delete</button>
+      </div>
+    </div>`;
+}
+
+function renderSingleCustomerDashboard(group, groups) {
+  activeCustomerGroup = group;
+  const body = document.getElementById('customerDashboardBody');
+  const firstDoc = group.docs[0];
+  const q = firstDoc.quote || {};
+  const totals = getCustomerTotals(group.docs);
+
+  // Contact details
+  const iconPin  = `<svg class="cdv-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  const iconPhone = `<svg class="cdv-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.44 2 2 0 0 1 3.57 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l1.12-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const iconMail  = `<svg class="cdv-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+  const contactLines = [
+    q.custAddr    ? `<span class="cdv-contact-line"><span class="cdv-contact-icon">${iconPin}</span>${esc(q.custAddr)}${q.custPostcode ? ', ' + esc(q.custPostcode) : ''}</span>` : '',
+    q.custPhone   ? `<span class="cdv-contact-line"><span class="cdv-contact-icon">${iconPhone}</span>${esc(q.custPhone)}</span>` : '',
+    q.custEmail   ? `<span class="cdv-contact-line"><span class="cdv-contact-icon">${iconMail}</span>${esc(q.custEmail)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  // Put customer name in modal title
+  const titleEl = document.getElementById('customerDashboardTitle');
+  if (titleEl) titleEl.textContent = group.name;
+
+  // contentHtml = pure dashboard content (used for download — no buttons)
+  const contentHtml = `
+    <div class="customer-dashboard-card printable-customer-dashboard">
+      <div class="cdv-header">
+        ${contactLines ? `<div class="cdv-contact">${contactLines}</div>` : ''}
+      </div>
+      <div class="cdv-summary-bar">
+        <div class="cdv-summary-item">
+          <span class="cdv-summary-label">Total Charged</span>
+          <span class="cdv-summary-value">${fmtPrice(totals.total)}</span>
+        </div>
+        <div class="cdv-summary-item">
+          <span class="cdv-summary-label">Paid</span>
+          <span class="cdv-summary-value cdv-paid">${fmtPrice(totals.paid)}</span>
+        </div>
+        <div class="cdv-summary-item">
+          <span class="cdv-summary-label">Outstanding</span>
+          <span class="cdv-summary-value ${totals.outstanding > 0 ? 'cdv-outstanding' : 'cdv-paid'}">${fmtPrice(totals.outstanding)}</span>
+        </div>
+        <div class="cdv-summary-item">
+          <span class="cdv-summary-label">Jobs</span>
+          <span class="cdv-summary-value">${group.docs.length}</span>
+        </div>
+      </div>
+      <div class="cdv-jobs-list">
+        ${group.docs.map(d => buildCustomerJobSection(d)).join('')}
+      </div>
+    </div>`;
+
+  body.innerHTML = contentHtml;
+
+  // Per-job download buttons (each opens full customer dashboard download)
+  body.querySelectorAll('.cdv-btn-download').forEach(btn => {
+    btn.addEventListener('click', () => downloadCustomerDashboard(group.name, contentHtml));
+  });
+
+  // Per-job action buttons
+  body.querySelectorAll('.cdv-btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => openCustomerEditChoice(btn.dataset.id));
+  });
+  body.querySelectorAll('.cdv-btn-camera').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('customerDashboardModal').style.display = 'none';
+      openPhotosModal(btn.dataset.id);
+    });
+  });
+  body.querySelectorAll('.cdv-btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('customerDashboardModal').style.display = 'none';
+      deleteDoc(btn.dataset.id);
+    });
+  });
+}
+
+/* ===== CUSTOMER EDIT CHOICE ===== */
+let activeEditDocId = null; // docId pre-selected when Edit is clicked on a specific job card
+
+function openCustomerEditChoice(docId) {
+  activeEditDocId = docId || null;
+  // Personalise the title with customer first name if available
+  try {
+    const first = (activeCustomerGroup?.docs[0]?.quote?.custFirstName || '').trim();
+    const titleEl = document.getElementById('customerEditChoiceModal')?.querySelector('.modal-title');
+    if (titleEl) titleEl.textContent = first ? `What would you like to edit, ${first}?` : 'What would you like to edit?';
+  } catch(e) {}
+  // Reset to main choice view and show
+  document.getElementById('custEditChoiceMain').style.display = '';
+  document.getElementById('custEditJobPicker').style.display = 'none';
+  document.getElementById('customerEditChoiceModal').style.display = 'flex';
+}
+
+function customerEditPickDoc(editType) {
+  const group = activeCustomerGroup;
+  if (!group) return;
+  // If we already know the specific doc (clicked from a job card), use it directly
+  if (activeEditDocId) {
+    executeCustomerEdit(editType, activeEditDocId);
+    return;
+  }
+  if (group.docs.length === 1) {
+    executeCustomerEdit(editType, group.docs[0].id);
+  } else {
+    // Show job picker
+    document.getElementById('custEditChoiceMain').style.display = 'none';
+    const jobList = document.getElementById('custEditJobPicker');
+    jobList.innerHTML = `
+      <p class="cec-pick-label">Which job?</p>
+      ${group.docs.map(d => `
+        <button type="button" class="cec-job-option" data-id="${d.id}" data-type="${editType}">
+          <span class="cec-job-ref">${esc(d.invoiceRef || d.ref || d.quote?.ref || 'No ref')}</span>
+          <span class="cec-job-desc">${esc((d.quote?.items || []).map(i => i.name).join(', ') || 'Job')}</span>
+          <span class="cec-job-total">${fmtPrice(d.total || 0)}</span>
+        </button>`).join('')}`;
+    jobList.style.display = '';
+    jobList.querySelectorAll('.cec-job-option').forEach(btn => {
+      btn.addEventListener('click', () => executeCustomerEdit(btn.dataset.type, btn.dataset.id));
+    });
+  }
+}
+
+function executeCustomerEdit(editType, docId) {
+  document.getElementById('customerEditChoiceModal').style.display = 'none';
+  if (editType === 'details') {
+    openCustomerDetailsEdit(docId);
+  } else if (editType === 'job') {
+    openJobDetailsEdit(docId);
+  } else if (editType === 'money') {
+    document.getElementById('customerDashboardModal').style.display = 'none';
+    openMarkPaid(docId);
+  }
+}
+
+function openCustomerDetailsEdit(docId) {
+  const group = activeCustomerGroup;
+  if (!group) return;
+  // Use the specific doc if we know which job was clicked, otherwise fall back to first doc in group
+  const targetDoc = (docId && state.saved.find(d => d.id === docId)) || group.docs[0];
+  const q = (targetDoc && targetDoc.quote) || {};
+  setVal('cdeCustTitle',        q.custTitle        || '');
+  setVal('cdeCustFirst',        q.custFirstName    || '');
+  setVal('cdeCustLast',         q.custLastName     || '');
+  setVal('cdeCustAddr',         q.custAddr         || '');
+  setVal('cdeCustPostcode',     q.custPostcode     || '');
+  setVal('cdeCustPhone',        q.custPhone        || '');
+  setVal('cdeCustEmail',        q.custEmail        || '');
+  setVal('cdeCustPrivateNotes', q.privateNotes     || '');
+  document.getElementById('customerDetailsEditModal').style.display = 'flex';
+}
+
+function saveCustomerDetails() {
+  const group = activeCustomerGroup;
+  if (!group) return;
+  // Customer-level fields — applied to every doc in the group
+  const sharedUpdates = {
+    custTitle:     getVal('cdeCustTitle'),
+    custFirstName: getVal('cdeCustFirst'),
+    custLastName:  getVal('cdeCustLast'),
+    custAddr:      getVal('cdeCustAddr'),
+    custPostcode:  getVal('cdeCustPostcode'),
+    custPhone:     getVal('cdeCustPhone'),
+    custEmail:     getVal('cdeCustEmail'),
+  };
+  // Private notes are per-job — only save to the specific doc that was edited
+  const privateNotes = getVal('cdeCustPrivateNotes');
+  const targetDocId = activeEditDocId || (group.docs[0] && group.docs[0].id);
+
+  group.docs.forEach(doc => {
+    if (!doc.quote) doc.quote = {};
+    Object.assign(doc.quote, sharedUpdates);
+    // Only update private notes on the specific job that was clicked
+    if (doc.id === targetDocId) {
+      doc.quote.privateNotes = privateNotes;
+    }
+    doc.custName = buildCustName(doc.quote);
+  });
+  // Update in-memory group name for re-render
+  const newName = buildCustName(sharedUpdates).trim() || group.name;
+  group.name = newName;
+  save();
+  refreshSavedDocs();
+
+  // Close edit modals and return to dashboard
+  document.getElementById('customerDetailsEditModal').style.display = 'none';
+  document.getElementById('customerEditChoiceModal').style.display = 'none';
+
+  // Re-render and show the customer dashboard
+  const updatedGroups = buildCustomerGroups();
+  const updatedGroup = updatedGroups.find(g => g.docs.some(d => group.docs.some(gd => gd.id === d.id))) || group;
+  activeCustomerGroup = updatedGroup;
+  renderSingleCustomerDashboard(updatedGroup, updatedGroups);
+  document.getElementById('customerDashboardModal').style.display = 'flex';
+
+  showSavedPopup("I've saved the details.");
+}
+
+/* ===== JOB DETAILS EDIT ===== */
+let activeJobDetailsDocId = null;
+
+function openJobDetailsEdit(docId) {
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+  activeJobDetailsDocId = docId;
+  const q = doc.quote || {};
+  const ref = q.ref || doc.ref || doc.invoiceRef || '';
+  const titleEl = document.getElementById('jobDetailsEditTitle');
+  if (titleEl) titleEl.textContent = ref ? `Job: ${ref}` : 'Job Details';
+  renderJobDetailsForm(doc);
+  document.getElementById('jobDetailsEditModal').style.display = 'flex';
+}
+
+function jdeItemRowHtml(item) {
+  return `
+    <div class="jde-item-row">
+      <input type="text" class="jde-item-name" placeholder="Description" value="${esc(item.name || '')}">
+      <div class="input-pfx" style="margin:0">
+        <span class="pfx-symbol">£</span>
+        <input type="number" class="jde-item-price" min="0" step="any" placeholder="0.00" value="${item.unitPrice != null ? item.unitPrice : ''}">
+      </div>
+      <button type="button" class="jde-item-remove" aria-label="Remove item">✕</button>
+    </div>`;
+}
+
+function renderJobDetailsForm(doc) {
+  const q = doc.quote || {};
+  // Match same fallback logic as buildCustomerJobSection — quote.items first, then legacy doc.items
+  const items = (q.items && q.items.length) ? q.items : ((doc.items && doc.items.length) ? doc.items : []);
+  // Calculate total from items; fall back to doc.total for total-override docs
+  const calcedTotal = items.reduce((s, i) => s + (i.unitPrice || 0) * (i.qty || 1), 0);
+  const displayTotal = items.length ? calcedTotal : (doc.total || 0);
+  const body = document.getElementById('jobDetailsEditBody');
+  const hasPriceList = state.priceList && state.priceList.length > 0;
+  body.innerHTML = `
+    ${hasPriceList ? `
+    <p class="jde-section-label">Add from Price List</p>
+    <input type="text" id="jdePickerSearch" class="search-input" placeholder="Search your price list..." style="margin-bottom:6px">
+    <div id="jdePickerList" class="jde-picker-list picker-list"></div>
+    <div class="jde-divider"></div>` : ''}
+    <p class="jde-section-label">Job Items</p>
+    <div class="jde-item-headers">
+      <span>Description</span><span>Price</span><span></span>
+    </div>
+    <div id="jdeItemsList" class="jde-items-list">
+      ${items.length ? items.map(item => jdeItemRowHtml(item)).join('') : `<p class="jde-empty-hint">No items yet - add from your price list above or use the button below.</p>`}
+    </div>
+    <button type="button" class="btn btn-sage btn-sm" id="jdeAddItemBtn">+ One-off Item</button>
+    <div class="form-group" style="margin-top:16px">
+      <label for="jdeTotalOverride">Total <span class="jde-total-hint">(auto-calculated from items above, or set manually)</span></label>
+      <div class="input-pfx form-group" style="margin:0">
+        <span class="pfx-symbol">£</span>
+        <input type="number" id="jdeTotalOverride" min="0" step="any" placeholder="0.00" value="${displayTotal > 0 ? displayTotal : ''}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:4px">
+      <label for="jdeNotes">Notes</label>
+      <textarea id="jdeNotes" rows="3" placeholder="Any notes for this job...">${esc(q.notes || '')}</textarea>
+    </div>`;
+
+  wireJdeRemoveButtons();
+  document.getElementById('jdeAddItemBtn').addEventListener('click', jdeAddItem);
+
+  // Auto-update total field as items are edited
+  body.addEventListener('input', e => {
+    if (e.target.classList.contains('jde-item-price')) jdeUpdateTotal();
+  });
+
+  // Wire price list picker if present
+  if (hasPriceList) {
+    jdeRenderPicker('');
+    document.getElementById('jdePickerSearch').addEventListener('input', e => jdeRenderPicker(e.target.value));
+    document.getElementById('jdePickerList').addEventListener('click', e => {
+      const item = e.target.closest('.pick-item');
+      if (item) jdeAddFromPriceList(item.dataset.jobId);
+    });
+  }
+}
+
+function jdeRenderPicker(searchVal) {
+  const q = (searchVal || '').toLowerCase();
+  const filtered = state.priceList.filter(j => j.name.toLowerCase().includes(q));
+  const container = document.getElementById('jdePickerList');
+  if (!container) return;
+  if (!filtered.length) {
+    container.innerHTML = '<p style="color:#888;font-size:0.85rem;padding:6px 0">No jobs match your search.</p>';
+    return;
+  }
+  // Get names already in the items list to show as "added"
+  const addedNames = new Set(
+    [...document.querySelectorAll('#jdeItemsList .jde-item-name')].map(el => el.value.trim().toLowerCase())
+  );
+  container.innerHTML = filtered.map(item => {
+    const isAdded = addedNames.has(item.name.toLowerCase());
+    return `
+      <div class="pick-item${isAdded ? ' added' : ''}" data-job-id="${esc(item.id)}" role="button" tabindex="0"
+           aria-label="Add ${esc(item.name)}">
+        <div class="pick-name">${esc(item.name)}${item.unit ? `<span class="pick-unit">(${esc(item.unit)})</span>` : ''}</div>
+        <span class="pick-price">${fmtPrice(item.price)}</span>
+        <span class="pick-add-btn">${isAdded ? '✓' : '+'}</span>
+      </div>`;
+  }).join('');
+}
+
+function jdeAddFromPriceList(jobId) {
+  const job = state.priceList.find(j => j.id === jobId);
+  if (!job) return;
+  const list = document.getElementById('jdeItemsList');
+  // Remove empty hint if present
+  const hint = list.querySelector('.jde-empty-hint');
+  if (hint) hint.remove();
+  // Add a new editable row pre-filled with price list item
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = jdeItemRowHtml({ name: job.name, unitPrice: job.price });
+  const row = wrapper.firstElementChild;
+  list.appendChild(row);
+  row.querySelector('.jde-item-remove').addEventListener('click', () => {
+    row.remove();
+    if (!list.querySelector('.jde-item-row')) {
+      list.innerHTML = '<p class="jde-empty-hint">No items yet - add from your price list above or use the button below.</p>';
+    }
+    jdeUpdateTotal();
+    jdeRenderPicker(document.getElementById('jdePickerSearch')?.value || '');
+  });
+  jdeUpdateTotal();
+  // Refresh picker to show item as added
+  jdeRenderPicker(document.getElementById('jdePickerSearch')?.value || '');
+  // Scroll new row into view
+  row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function jdeUpdateTotal() {
+  const prices = [...document.querySelectorAll('#jdeItemsList .jde-item-price')]
+    .map(el => parseFloat(el.value) || 0);
+  if (prices.length > 0) {
+    const total = prices.reduce((s, p) => s + p, 0);
+    const totalEl = document.getElementById('jdeTotalOverride');
+    if (totalEl) totalEl.value = total.toFixed(2);
+  }
+}
+
+function wireJdeRemoveButtons() {
+  document.querySelectorAll('#jdeItemsList .jde-item-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('.jde-item-row');
+      if (row) row.remove();
+      // Show empty hint if no rows left
+      const list = document.getElementById('jdeItemsList');
+      if (list && !list.querySelector('.jde-item-row')) {
+        list.innerHTML = '<p class="jde-empty-hint">No items yet - add one below.</p>';
+      }
+    });
+  });
+}
+
+function jdeAddItem() {
+  const list = document.getElementById('jdeItemsList');
+  // Remove empty hint if present
+  const hint = list.querySelector('.jde-empty-hint');
+  if (hint) hint.remove();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = jdeItemRowHtml({ name: '', unitPrice: '' });
+  const row = wrapper.firstElementChild;
+  list.appendChild(row);
+  row.querySelector('.jde-item-remove').addEventListener('click', () => {
+    row.remove();
+    if (!list.querySelector('.jde-item-row')) {
+      list.innerHTML = '<p class="jde-empty-hint">No items yet - add one below.</p>';
+    }
+  });
+  row.querySelector('.jde-item-name').focus();
+}
+
+function saveJobDetails() {
+  const docId = activeJobDetailsDocId;
+  const doc = state.saved.find(d => d.id === docId);
+  if (!doc) return;
+
+  // Collect items
+  const items = [];
+  document.querySelectorAll('#jdeItemsList .jde-item-row').forEach(row => {
+    const name = (row.querySelector('.jde-item-name')?.value || '').trim();
+    const price = parseFloat(row.querySelector('.jde-item-price')?.value) || 0;
+    if (name || price) {
+      items.push({ id: uid(), name, unitPrice: price, unit: '', qty: 1 });
+    }
+  });
+
+  const notes = document.getElementById('jdeNotes')?.value || '';
+  const totalOverride = parseFloat(document.getElementById('jdeTotalOverride')?.value) || 0;
+
+  if (!doc.quote) doc.quote = {};
+  doc.quote.items = items;
+  doc.quote.notes = notes;
+
+  // Use item totals if items present; otherwise use the manual total override
+  if (items.length > 0) {
+    const subtotal = items.reduce((s, i) => s + (i.unitPrice || 0) * (i.qty || 1), 0);
+    const discPct = parseFloat(doc.quote.discount) || 0;
+    const afterDisc = subtotal * (1 - discPct / 100);
+    const vatPct = parseFloat(doc.quote.vatRate) || 0;
+    doc.total = afterDisc * (1 + vatPct / 100);
+  } else if (totalOverride > 0) {
+    doc.total = totalOverride;
+  }
+  doc.custName = buildCustName(doc.quote);
+
+  save();
+  refreshSavedDocs();
+  document.getElementById('jobDetailsEditModal').style.display = 'none';
+
+  // Keep customer dashboard data fresh in the background
+  try {
+    const groups = buildCustomerGroups();
+    const updatedGroup = groups.find(g => g.docs.some(d => d.id === docId)) || activeCustomerGroup;
+    if (updatedGroup) activeCustomerGroup = updatedGroup;
+  } catch (e) { console.error('Dashboard refresh error:', e); }
+
+  // Return to a live preview of the updated estimate/quote
+  const html = buildDocHtml(doc, 'quote');
+  openPreview(html, 'quote', docId);
+  showSavedPopup('Job details saved.');
 }
 
 /* ===== DOCUMENT GENERATION ===== */
@@ -1801,6 +3906,10 @@ const DOC_CSS = `
   .sig-img{max-height:60px;max-width:200px}
   .sig-typed{font-family:'Dancing Script',cursive;font-size:1.5rem;color:#2C2C2C}
   .doc-footer{margin-top:32px;padding-top:16px;border-top:1px solid #ddd5c5;font-size:0.75rem;color:#aaa;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+  .photo-doc-page{page-break-before:always}
+  .photo-doc-group{margin-top:16px}
+  .photo-doc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+  .photo-doc-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;border:1px solid #ddd5c5}
   @media print{body{padding:0}.doc-wrap{max-width:100%;padding:16px}}
 `;
 
@@ -1830,7 +3939,7 @@ function buildDocHtml(doc, docType, extra = {}) {
   const disc   = parseFloat(q.discount) || 0;
   const afterDisc = sub - sub * disc / 100;
   const vatAmt = afterDisc * vatRate / 100;
-  const total  = afterDisc + vatAmt;
+  const total  = doc.total != null ? doc.total : afterDisc + vatAmt;
 
   let docLabel = q.type || 'Estimate';
   let refLabel = q.ref || '';
@@ -1845,6 +3954,8 @@ function buildDocHtml(doc, docType, extra = {}) {
     if (extra.notes)   extraSection += `<div class="section"><h3>Notes</h3><p>${esc(extra.notes)}</p></div>`;
   } else if (docType === 'receipt') {
     docLabel = 'Receipt';
+    refLabel  = extra.recRef || doc.receiptRef || '';
+    dateLabel = extra.date || q.date;
     extraSection += `
       <div class="section">
         <h3>Payment Received</h3>
@@ -1882,11 +3993,12 @@ function buildDocHtml(doc, docType, extra = {}) {
       <td style="text-align:right">${fmtPrice(item.unitPrice)}</td>
       <td style="text-align:right">${fmtPrice(item.unitPrice * item.qty)}</td>
     </tr>
-  `).join('') || `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px 0;font-style:italic">No jobs added — go back and add jobs in Step 2</td></tr>`;
+  `).join('') || `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px 0;font-style:italic">No jobs added - go back and add jobs in Step 2</td></tr>`;
 
-  const paymentSection = buildPaymentSection(co, docType);
+  const paymentSection = buildPaymentSection(co, docType, extra.payMethod);
   const termsSection   = buildTermsSection(q);
   const sigSection     = buildSigSection(q, co, docType);
+  const photosSection  = extra.includePhotos ? buildPhotosSection(doc) : '';
 
   const validLine = (() => {
     if (!q.validFor || docType !== 'quote') return '';
@@ -1952,6 +4064,7 @@ function buildDocHtml(doc, docType, extra = {}) {
       ${paymentSection}
       ${termsSection}
       ${sigSection}
+      ${photosSection}
       <div class="doc-footer">
         <span>Generated by Lexi Handles It</span>
         <span>${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}</span>
@@ -1960,20 +4073,51 @@ function buildDocHtml(doc, docType, extra = {}) {
   `;
 }
 
-function buildPaymentSection(co, docType) {
-  if (docType !== 'invoice') return '';   // only show on invoices
-  const methods = co.payMethods || [];
-  let lines = [];
+function buildPaymentSection(co, docType, preferredMethod = '') {
+  if (docType !== 'invoice') return '';
+  const coMethods  = co.payMethods || [];
+  // preferredMethod may be a string (legacy) or array (new multi-select)
+  const preferred  = Array.isArray(preferredMethod)
+    ? preferredMethod
+    : (preferredMethod ? [preferredMethod] : []);
 
-  if (methods.includes('bank') && co.bankAcc) {
+  // If specific methods chosen, only show those; otherwise fall back to all company methods
+  const show = preferred.length > 0 ? preferred : null;
+
+  let lines = [];
+  const want = m => !show || show.some(s => s.toLowerCase().includes(m));
+
+  if (want('bank') && coMethods.includes('bank') && co.bankAcc) {
     lines.push(`Bank Transfer\nAccount Name: ${co.bankAccHolder || ''}\nBank: ${co.bankName || ''}\nSort Code: ${co.bankSort || ''}\nAccount Number: ${co.bankAcc}`);
   }
-  if (methods.includes('cash')) lines.push('Cash on Completion');
-  if (methods.includes('paypal') && co.paypalRef) lines.push(`PayPal: ${co.paypalRef}`);
-  if (methods.includes('other') && co.payOther)    lines.push(co.payOther);
+  if (want('cash') && coMethods.includes('cash')) lines.push('Cash on Completion');
+  if (want('paypal') && coMethods.includes('paypal') && co.paypalRef) lines.push(`PayPal: ${co.paypalRef}`);
+  if (want('card')) lines.push('Card Payment Accepted');
+  if (want('other') && coMethods.includes('other') && co.payOther) lines.push(co.payOther);
+
+  // If preferred methods selected but no company details match, just list the chosen methods
+  if (!lines.length && preferred.length) lines = [...preferred];
 
   if (!lines.length) return '';
-  return `<div class="section"><h3>Payment Details</h3><p>${esc(lines.join('\n\n'))}</p></div>`;
+  return `<div class="section"><h3>Payment Details</h3><p style="white-space:pre-line">${esc(lines.join('\n\n'))}</p></div>`;
+}
+
+function buildPhotosSection(doc) {
+  const photos = doc.photos || {};
+  const before = (photos.before || []).slice(0, 3);
+  const after = (photos.after || []).slice(0, 3);
+  if (!before.length && !after.length) return '';
+  const group = (title, list) => !list.length ? '' : `
+    <div class="photo-doc-group">
+      <h3>${title}</h3>
+      <div class="photo-doc-grid">${list.map(src => `<img src="${src}" alt="${title} photo">`).join('')}</div>
+    </div>`;
+  return `
+    <div class="section photo-doc-page">
+      <h3>Before and After Photos</h3>
+      ${group('Before', before)}
+      ${group('After', after)}
+    </div>`;
 }
 
 function buildTermsSection(q) {
@@ -1991,13 +4135,13 @@ function buildTermsSection(q) {
 }
 
 function buildSigSection(q, co, docType) {
-  if (!q.authSig && !q.custSig && !getVal('custSigText')) return '';
+  // Prefer saved custSigText; only read live DOM for new page3 quotes (where custSigText not yet saved)
+  const sigText = q.custSigText || document.getElementById('custSigText')?.value || '';
+  if (!q.authSig && !sigText) return '';
   const authName = q.authSig || co.businessName || '';
-  const authSigContent = q.custSig
-    ? `<img src="${q.custSig}" class="sig-img">`
-    : (document.getElementById('custSigText')?.value
-        ? `<span class="sig-typed">${esc(document.getElementById('custSigText')?.value || '')}</span>`
-        : '');
+  const authSigContent = sigText
+    ? `<span class="sig-typed">${esc(sigText)}</span>`
+    : '';
 
   return `
     <div class="sig-block">
@@ -2028,6 +4172,63 @@ function wrapDoc(inner) {
 
 function printDoc(html) {
   printRaw(html);
+}
+
+function downloadCustomerDashboard(groupName, html) {
+  const safeName = (groupName || 'Customer').replace(/[^a-zA-Z0-9 \-_.]/g, '').trim().replace(/\s+/g, '-');
+  const filename = `${safeName}-Dashboard.html`;
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;color:#2C2C2C;background:#fff;padding:24px;max-width:700px;margin:0 auto}
+    .customer-dashboard-card{border:1px solid #DDD5C8;border-radius:8px;overflow:hidden;padding:16px}
+    .cdv-header{border-bottom:1.5px solid #DDD5C8;padding-bottom:12px;margin-bottom:14px}
+    .cdv-contact{display:flex;flex-direction:column;gap:4px}
+    .cdv-contact-line{display:flex;align-items:flex-start;gap:6px;font-size:0.88rem;color:#2C2C2C;line-height:1.4}
+    .cdv-summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#F5F0E8;border-radius:8px;padding:12px;margin-bottom:16px}
+    .cdv-summary-item{display:flex;flex-direction:column;gap:2px;text-align:center}
+    .cdv-summary-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:2px}
+    .cdv-summary-value{font-size:1rem;font-weight:700;color:#2C2C2C}
+    .cdv-paid{color:#4A7C59}.cdv-outstanding{color:#C0392B}
+    .cdv-jobs-list{display:flex;flex-direction:column;gap:12px}
+    .cdv-job-card{border:1.5px solid #DDD5C8;border-radius:10px;overflow:hidden}
+    .cdv-job-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#F5F0E8;border-bottom:1px solid #DDD5C8}
+    .cdv-job-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .cdv-job-ref{font-weight:700;font-size:0.95rem;color:#7D5730}
+    .cdv-job-date{font-size:0.82rem;color:#888}
+    .cdv-items{padding:10px 14px 6px}
+    .cdv-item-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0ebe3;font-size:0.9rem}
+    .cdv-item-row:last-child{border-bottom:none}
+    .cdv-item-name{flex:1;color:#2C2C2C}.cdv-item-qty{font-size:0.78rem;color:#999;margin-left:4px}.cdv-item-price{font-weight:600;white-space:nowrap}
+    .cdv-totals{padding:8px 14px 10px;border-top:1px solid #DDD5C8;background:#F5F0E8}
+    .cdv-total-row{display:flex;justify-content:space-between;padding:2px 0;font-size:0.92rem;color:#2C2C2C}
+    .cdv-discount-row{color:#4A7C59}.cdv-vat-row{opacity:0.75}
+    .cdv-grand-total{font-weight:700;font-size:1rem;margin-top:4px;border-top:1px solid #DDD5C8;padding-top:4px}
+    .cdv-section{padding:10px 14px;border-top:1px solid #DDD5C8}
+    .cdv-section-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:#888;font-weight:600;margin-bottom:6px}
+    .cdv-payment-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #DDD5C8;font-size:0.88rem}
+    .cdv-payment-row:last-child{border-bottom:none}
+    .cdv-pay-num{min-width:82px;color:#888;font-size:0.82rem;flex-shrink:0}.cdv-pay-date{flex:1;color:#2C2C2C}.cdv-pay-amount{font-weight:700;white-space:nowrap}
+    .cdv-outstanding-row .cdv-pay-amount{color:#C0392B}
+    .cdv-paid-stamp{font-size:0.82rem;color:#4A7C59;font-weight:600}
+    .cdv-note-text{font-size:0.88rem;line-height:1.55;color:#2C2C2C;white-space:pre-wrap}
+    .cdv-private{background:#fffbf0;border-left:3px solid #e6b800}
+    .cdv-photo-group{margin-bottom:8px}.cdv-photo-label{font-size:0.78rem;font-weight:600;color:#888;margin-bottom:4px}
+    .cdv-photo-grid{display:flex;gap:8px;flex-wrap:wrap}.cdv-photo-thumb{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1.5px solid #DDD5C8}
+    .cdv-job-actions{display:none}
+    .type-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
+    .type-badge.estimate{background:#e3f0d4;color:#6B7C5C}.type-badge.quote{background:#7D5730;color:#fff}
+    .type-badge.invoiced{background:#dbeafe;color:#1d4ed8}.type-badge.paid{background:#dcfce7;color:#166534}
+    .type-badge.overdue{background:#fecaca;color:#C0392B}`;
+  const fullHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(groupName)} - Dashboard</title><style>${css}</style></head><body>${html}</body></html>`;
+  const blob = new Blob([fullHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function printRaw(inner) {
@@ -2081,7 +4282,7 @@ function exportData() {
   a.download = `lexi-backup-${todayStr()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast('Backup exported!', 'success');
+  toast("I've exported your backup.", 'success');
 }
 
 function importData(e) {
@@ -2103,7 +4304,7 @@ function importData(e) {
       refreshPriceList();
       refreshSavedDocs();
       updateSavedBadge();
-      toast('Backup restored!', 'success');
+      toast("I've restored your backup.", 'success');
     } catch(err) {
       toast('Invalid backup file. Please check and try again.', 'error');
     }
