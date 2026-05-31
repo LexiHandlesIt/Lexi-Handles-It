@@ -2,1327 +2,425 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#7D5730">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>Lexi Handles It</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lexi Handles It — Free Tools &amp; Templates for Tradespeople</title>
+  <meta name="description" content="Free estimate, invoice and business templates for UK tradespeople. Plus the app that handles your paperwork so you can focus on the graft.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=onboarding-mobile-fit-2">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ONBOARDING MODAL -->
-  <div id="onboardingModal" class="ob-screen" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="ob-card">
-
-    <div class="ob-header">
-      <img src="3 Lexi Handles It All.png" alt="Lexi Handles It All" class="ob-wordmark" onerror="this.style.display='none'">
-
-      <p class="ob-intro" id="onboardingTitle">Hi, I'm Lexi, your AI business mate. I'll handle the drafts, you handle the graft. Three simple steps. Let's get you sorted.</p>
-    </div>
-
-    <div class="ob-middle">
-    <!-- LEFT COLUMN: steps -->
-    <div class="ob-left">
-      <div class="ob-steps">
-        <div class="ob-step">
-          <span class="ob-num">1</span>
-          <div class="ob-step-text">
-            <strong>Set up your business</strong>
-            <span>Your name, logo and details. Real simple.</span>
-          </div>
+  <!-- ===== NAV ===== -->
+  <nav class="site-nav">
+    <div class="container">
+      <div class="nav-inner">
+        <a href="#" class="nav-logo">
+          <img src="1 Lexi Handles It Transparent.png" alt="Lexi Handles It" class="nav-logo-img" onerror="this.style.display='none'">
+          <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="nav-strap-img" onerror="this.style.display='none'">
+        </a>
+        <div class="nav-actions">
+          <a href="#free-guides" class="btn btn-outline">Free Guides</a>
+          <a href="#free-templates" class="btn btn-outline">Free Templates</a>
+          <a href="#pricing" class="btn btn-walnut">Get the App</a>
         </div>
-        <div class="ob-step">
-          <span class="ob-num">2</span>
-          <div class="ob-step-text">
-            <strong>Build your price list</strong>
-            <span>You'll only do this once.</span>
-          </div>
-        </div>
-        <div class="ob-step">
-          <span class="ob-num">3</span>
-          <div class="ob-step-text">
-            <strong>Create your estimate or quote</strong>
-            <span>Pick your customer, tap your jobs, send it off.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="ob-footer">
-        <div class="ob-referral">
-          <select id="referralSource" class="ob-referral-select">
-            <option value="" disabled selected>How'd you find me?</option>
-            <option value="google">I was Googling.</option>
-            <option value="social">Scrolling my Social Media.</option>
-            <option value="friend">A friend told me.</option>
-            <option value="flyer">I saw your flyer.</option>
-            <option value="other">I was doing something else.</option>
-          </select>
-        </div>
-
-        <button id="startBtn" class="btn btn-sage btn-full ob-start-btn">Sort me out Lexi</button>
       </div>
     </div>
+  </nav>
 
-    <!-- RIGHT COLUMN: portrait -->
-    <div class="ob-right">
-      <img src="Lexi Portrait Transparent 3.png" alt="Lexi" class="ob-portrait" onerror="this.style.display='none'">
-    </div>
-    </div>
-
-    </div><!-- /.ob-card -->
-  </div>
-
-  <!-- PRICE LIST ONBOARDING -->
-  <div id="plOnboardingModal" class="ob-screen" style="display:none" role="dialog" aria-modal="true" aria-labelledby="plOnboardingTitle">
-    <div class="ob-card pl-card">
-
-      <div class="pl-content">
-        <img src="3 Lexi Handles It All.png" alt="Lexi Handles It All" class="ob-wordmark" onerror="this.style.display='none'">
-        <p class="ob-intro" id="plOnboardingTitle">Right, let's build your price list. There are three ways to get your jobs in...</p>
-
-        <div class="ob-steps">
-          <div class="ob-step">
-            <span class="ob-num">1</span>
-            <div class="ob-step-text">
-              <strong>Upload a file</strong>
-              <span>Drop in a CSV or TXT and I'll pull your jobs straight in.</span>
-            </div>
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-img-full">
+      <img src="Opening Image.png" alt="You know your trade. Lexi's your upgrade." class="hero-full-img">
+      <div class="hero-text-overlay">
+        <h1>Hi, I'm Lexi. I help tradespeople who are brilliant at the job send professional estimates, quotes, invoices and receipts.</h1>
+        <div class="hero-split">
+          <div class="hero-split-col">
+            <p class="hero-sub">You can grab your <span class="script-gold">free</span> templates and do it yourself. Old school!</p>
+            <a href="#free-templates" class="btn btn-sage hero-split-btn">Send me my templates, Lexi</a>
           </div>
-          <div class="ob-step">
-            <span class="ob-num">2</span>
-            <div class="ob-step-text">
-              <strong>Paste a list</strong>
-              <span>Got a list already? Paste it in. One job per line, name then price.</span>
-            </div>
-          </div>
-          <div class="ob-step">
-            <span class="ob-num">3</span>
-            <div class="ob-step-text">
-              <strong>Add jobs one by one</strong>
-              <span>Type in a job name and price. Quick and easy.</span>
-            </div>
+          <div class="hero-split-col">
+            <p class="hero-sub">Or try the app for <span class="script-gold">free</span>. Professional branded paperwork. Done fast. From your phone.</p>
+            <a href="#pricing" class="btn btn-sage hero-split-btn">Show me your app, Lexi</a>
           </div>
         </div>
-
-        <p class="pl-tagline">Your price list, your way.</p>
-
-        <button id="plOnboardingBtn" class="btn btn-sage btn-full ob-start-btn">Let's Build it Lexi</button>
-      </div>
-
-      <div class="pl-portrait-wrap">
-        <img src="Lexi Portrait Transparent 4.png" alt="Lexi" class="pl-portrait" onerror="this.style.display='none'">
-      </div>
-
-    </div><!-- /.ob-card -->
-  </div>
-
-  <!-- FIXED HEADER -->
-  <header class="app-header" id="appHeader">
-    <div class="header-logo" id="headerLogoArea">
-      <img src="1 Lexi Handles It Transparent.png" alt="Lexi Handles It" class="header-logo-img" onerror="this.style.display='none'">
-      <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="header-strap-img" onerror="this.style.display='none'">
-    </div>
-    <div class="header-right">
-      <img src="Lexi Profile.png" alt="Lexi" class="header-avatar" onerror="this.style.display='none'">
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-      </button>
-    </div>
-  </header>
-
-  <!-- SLIDE-OUT NAV MENU -->
-  <div class="nav-menu" id="navMenu" aria-hidden="true">
-    <button class="nav-menu-item" data-target="page3" id="menuNewQuote">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      New Estimate or Quote
-    </button>
-    <button class="nav-menu-item" id="menuNewInvoice">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
-      New Invoice
-    </button>
-    <button class="nav-menu-item" id="menuNewReceipt">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
-      New Receipt
-    </button>
-    <button class="nav-menu-item" data-target="page4" id="menuSavedDocs">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      View Saved Jobs
-      <span class="nav-menu-badge" id="savedBadge" style="display:none">0</span>
-    </button>
-    <button class="nav-menu-item" id="menuBankDetails">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
-      Send Bank Details
-    </button>
-    <button class="nav-menu-item nav-menu-section-break" data-target="page1" id="menuEditBusiness">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Edit My Business
-    </button>
-    <button class="nav-menu-item" data-target="page2" id="menuPriceList">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-      Edit My Price List
-    </button>
-    <button class="nav-menu-item nav-menu-section-break" id="menuShareLexi">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      Share Lexi
-    </button>
-    <button class="nav-menu-item" id="menuBackupRestore">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
-      Backup &amp; Restore
-    </button>
-    <button class="nav-menu-item nav-menu-signout" id="menuSignOut">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Sign Out
-    </button>
-  </div>
-  <div class="nav-menu-overlay" id="navMenuOverlay"></div>
-
-  <!-- BACKUP & RESTORE MODAL -->
-  <div class="modal-overlay" id="backupRestoreModal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-card backup-modal-card">
-      <button class="modal-close" id="closeBackupModal" aria-label="Close">&times;</button>
-      <h2 class="card-title" style="margin-bottom:8px">Backup &amp; Restore</h2>
-      <p class="card-desc" style="margin-bottom:20px">Export all your data (business details, price list and saved jobs) as a file, or restore from a previous backup.</p>
-      <div class="backup-modal-actions">
-        <button type="button" class="btn btn-outline" id="exportDataBtn2">⬇ Export Backup</button>
-        <button type="button" class="btn btn-outline" id="importDataBtn2">⬆ Import Backup</button>
-        <input type="file" id="importDataFile2" accept=".json" style="display:none" aria-hidden="true">
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- VOICE DISAMBIGUATION MODAL -->
-  <div class="modal-overlay" id="voicePickModal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-card vpick-modal-card">
-      <button class="modal-close" id="closeVoicePickModal" aria-label="Close">&times;</button>
-      <h2 class="card-title" style="margin-bottom:4px">Which job did you mean?</h2>
-      <p class="card-desc" style="margin-bottom:16px">Tap the one you want to add.</p>
-      <div id="voicePickList" class="vpick-list"></div>
-      <button type="button" class="btn btn-outline w-100" id="voicePickNoneBtn" style="margin-top:12px">None of these - add manually</button>
+  <!-- ===== FREE TEMPLATES ===== -->
+  <section class="templates-section" id="free-templates">
+    <div class="container">
+      <p class="section-eyebrow">Completely Free</p>
+      <h2 class="section-title">6 free tools every tradesperson needs</h2>
+      <p class="section-sub">Professional documents, ready to download. No sign-up needed.</p>
+
+      <!-- ── Clipboard grid ── -->
+      <div class="fb-grid">
+
+        <!-- 1 Estimate & Quote -->
+        <a href="Lexi's Estimate &amp; Quote Template (Excel).xlsx" download class="fb-card">
+          <div class="fb-num">1</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/1-estimate.png" alt="Lexi's Estimate &amp; Quote Template"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Estimate &amp; Quote Template</h3>
+          <p class="fb-desc">Your price, looking professional before you've said a word. Send quotes that make customers say yes.</p>
+        </a>
+
+        <!-- 2 Invoice -->
+        <a href="Lexi's Invoice Template (Excel).xlsx" download class="fb-card">
+          <div class="fb-num">2</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/2-invoice.png" alt="Lexi's Invoice Template"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Invoice Template</h3>
+          <p class="fb-desc">Get paid faster with invoices that mean business. Clear, branded, and impossible to ignore.</p>
+        </a>
+
+        <!-- 3 Receipt -->
+        <a href="Lexi's Receipt Template.xlsx" download class="fb-card">
+          <div class="fb-num">3</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/3-receipt.png" alt="Lexi's Receipt Template"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Receipt Template</h3>
+          <p class="fb-desc">Because every payment deserves a paper trail. Professional proof of payment, every single time.</p>
+        </a>
+
+        <!-- 4 Job Completion Certificate -->
+        <a href="Lexi's Job Completion Certificate.docx" download class="fb-card">
+          <div class="fb-num">4</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/4-certificate.png" alt="Lexi's Job Completion Certificate"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Job Completion Certificate</h3>
+          <p class="fb-desc">Sign off every job like the pro you are. Protects you, impresses them, and closes the job properly.</p>
+        </a>
+
+        <!-- 5 Risk Assessment -->
+        <a href="Lexi's Risk Assessment Template.xlsx" download class="fb-card">
+          <div class="fb-num">5</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/5-risk.png" alt="Lexi's Risk Assessment Template"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Risk Assessment Template</h3>
+          <p class="fb-desc">Cover yourself before you start. Simple, thorough, and ready to fill in before any job.</p>
+        </a>
+
+        <!-- 6 Business Plan -->
+        <a href="Lexi's Business Plan Template.docx" download class="fb-card">
+          <div class="fb-num">6</div>
+          <div class="fb-frame">
+            <div class="fb-clip"></div>
+            <div class="fb-doc"><img src="images/6-businessplan.png" alt="Lexi's Business Plan Template"></div>
+          </div>
+          <h3 class="fb-title">Lexi's Business Plan Template</h3>
+          <p class="fb-desc">Know where you're going before you get in the van. Your business, your goals, on paper.</p>
+        </a>
+
+      </div>
+
+      <!-- Email capture -->
+      <div class="capture-box">
+        <h3>Want me to send all 6 straight to your inbox?</h3>
+        <p>Drop your name and email and I'll send them straight over. No spam. Unsubscribe any time.</p>
+        <!-- ★ REPLACE ACTION WITH YOUR MAILCHIMP FORM URL ★ -->
+        <form class="capture-form" action="YOUR_MAILCHIMP_FORM_URL" method="post" target="_blank">
+          <input type="text" name="FNAME" placeholder="Your first name" required>
+          <input type="email" name="EMAIL" placeholder="Your email address" required>
+          <button type="submit" class="btn btn-walnut btn-full">Send me my free templates, Lexi</button>
+        </form>
+        <p class="capture-note">Your details are safe. I'll only use them to send you the templates and occasional useful updates.</p>
+      </div>
+
     </div>
-  </div>
+  </section>
 
-  <!-- VOICE JOB NOT FOUND MODAL -->
-  <div class="modal-overlay" id="voiceNotFoundModal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-card" style="max-width:380px">
-      <button class="modal-close" id="closeVoiceNotFoundModal" aria-label="Close">&times;</button>
-      <h2 class="card-title" style="margin-bottom:4px">Not in your saved jobs</h2>
-      <p class="card-desc" style="margin-bottom:16px">Add now.</p>
-      <div class="form-group">
-        <label for="vnfName">Description</label>
-        <input type="text" id="vnfName" placeholder="Job description">
-      </div>
-      <div style="display:flex;gap:10px">
-        <div class="form-group" style="flex:1">
-          <label for="vnfPrice">Price (£)</label>
-          <input type="number" id="vnfPrice" placeholder="0.00" min="0" step="any">
+  <!-- ===== FREE GUIDES ===== -->
+  <section class="guides-section" id="free-guides">
+    <div class="container">
+      <p class="section-eyebrow">Completely Free</p>
+      <h2 class="section-title">Guides that help you win more jobs</h2>
+      <p class="section-sub">Short, practical guides written for UK tradespeople. Read them on your phone, save them, share them.</p>
+
+      <!-- The Quote Journey — Guides 1–4 -->
+      <div class="guides-block">
+        <div class="guides-block-header">
+          <span class="guides-badge">Step-by-Step Series</span>
+          <h3>The Quote Journey</h3>
+          <p>Four guides. One for each stage — from the first call to closing the deal.</p>
         </div>
-        <div class="form-group" style="flex:1">
-          <label for="vnfUnit">Unit</label>
-          <input type="text" id="vnfUnit" placeholder="each">
+        <div class="journey-grid">
+
+          <div class="journey-card">
+            <div class="journey-num">1</div>
+            <h4>Before You Leave The House</h4>
+            <p>What to check, prepare and confirm before you set off for the job.</p>
+            <a href="Lexi_Guide_1_Before_You_Leave_The_House.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="journey-card">
+            <div class="journey-num">2</div>
+            <h4>At The Property</h4>
+            <p>How to carry yourself, ask the right questions, and size up the job properly.</p>
+            <a href="Lexi_Guide_2_At_The_Property.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="journey-card">
+            <div class="journey-num">3</div>
+            <h4>Writing The Quote</h4>
+            <p>How to write a quote that looks professional and stands out from the competition.</p>
+            <a href="Lexi_Guide_3_Writing_The_Quote.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="journey-card">
+            <div class="journey-num">4</div>
+            <h4>After You Send It</h4>
+            <p>What to do once the quote goes out — follow up, handle objections, close the job.</p>
+            <a href="Lexi_Guide_4_After_You_Send_It.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
         </div>
       </div>
-      <div class="vnf-actions">
-        <button type="button" class="btn btn-primary w-100" id="vnfAddBothBtn">Save &amp; Add to Jobs</button>
-        <button type="button" class="btn btn-outline w-100" id="vnfAddOnceBtn">Save for Customer</button>
+
+      <!-- Trade Editions — Guide 5 -->
+      <div class="guides-block">
+        <div class="guides-block-header">
+          <span class="guides-badge guides-badge--sage">Pick Your Trade</span>
+          <h3>Trade Edition Guides</h3>
+          <p>The same proven guide, tailored for your specific trade. Grab yours — or grab them all.</p>
+        </div>
+        <div class="trade-grid">
+
+          <div class="trade-card">
+            <div class="trade-icon">🧱</div>
+            <h4>Builder Edition</h4>
+            <a href="Lexi_Guide_5_Builder_Edition.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="trade-card">
+            <div class="trade-icon">🌿</div>
+            <h4>Gardener Edition</h4>
+            <a href="Lexi_Guide_5_Gardener_Edition.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="trade-card">
+            <div class="trade-icon">🎨</div>
+            <h4>Painter Edition</h4>
+            <a href="Lexi_Guide_5_Painter_Edition.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="trade-card">
+            <div class="trade-icon">🔧</div>
+            <h4>Plumber Edition</h4>
+            <a href="Lexi_Guide_5_Plumber_Edition.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+          <div class="trade-card trade-card-highlight">
+            <div class="trade-icon">🏆</div>
+            <h4>Win More Jobs</h4>
+            <p>Works for any trade — practical advice on standing out and getting more work.</p>
+            <a href="Lexi_Guide_5_Win_More_Jobs.html" target="_blank" class="dl-btn dl-guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Read Guide
+            </a>
+          </div>
+
+        </div>
       </div>
+
     </div>
-  </div>
+  </section>
 
-  <!-- MAIN CONTENT -->
-  <main class="app-main">
-
-    <!-- PAGE 1: BUSINESS SETUP -->
-    <section id="page1" class="page active" data-page="1">
-<div class="page-header">
-        <h1 class="page-title" id="page1Title"><span class="page-num">1.</span> Set Up Your Business</h1>
-        <p class="page-sub" id="page1Sub">So what's your trade? Tell me about your business so I can customise your documents.</p>
-      </div>
-
-      <!-- About You -->
-      <div class="card">
-        <h2 class="card-title">About You</h2>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="p1FirstName">First Name <span class="required">*</span></label>
-            <input type="text" id="p1FirstName" autocomplete="given-name" required>
-          </div>
-          <div class="form-group">
-            <label for="p1LastName">Last Name <span class="required">*</span></label>
-            <input type="text" id="p1LastName" autocomplete="family-name" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="p1BusinessName">Business Name</label>
-          <input type="text" id="p1BusinessName" autocomplete="organization">
-        </div>
-        <div class="form-group">
-          <label for="p1Address">Business Address</label>
-          <textarea id="p1Address" rows="3" autocomplete="street-address"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="p1Postcode">Postcode</label>
-          <input type="text" id="p1Postcode" autocomplete="postal-code">
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="p1Phone">Phone</label>
-            <input type="tel" id="p1Phone" autocomplete="tel">
-          </div>
-          <div class="form-group">
-            <label for="p1Email">Email</label>
-            <input type="email" id="p1Email" autocomplete="email">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="p1Website">Website</label>
-          <input type="url" id="p1Website" autocomplete="url">
-        </div>
-        <div class="form-group">
-          <label for="p1Trade">Your Trade</label>
-          <select id="p1Trade">
-            <option value="">Select your trade…</option>
-            <option value="Builder">Builder</option>
-            <option value="Carpenter">Carpenter</option>
-            <option value="Decorator">Decorator</option>
-            <option value="Electrician">Electrician</option>
-            <option value="Gardener">Gardener</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <!-- Logo Upload -->
-        <div class="form-group">
-          <label>Business Logo</label>
-          <div class="logo-upload-area" id="logoUploadArea" tabindex="0" role="button" aria-label="Upload business logo">
-            <div id="logoPlaceholder" class="logo-placeholder">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span>Tap to upload logo</span>
-              <small>PNG, JPG or SVG (shown on documents)</small>
-            </div>
-            <div id="logoPreview" class="logo-preview" style="display:none">
-              <img id="logoImg" src="" alt="Business logo preview">
-              <div class="logo-actions">
-                <button type="button" class="btn btn-sm btn-outline" id="changeLogoBtn">Change</button>
-                <button type="button" class="btn btn-sm btn-danger" id="removeLogoBtn">Remove</button>
-              </div>
-            </div>
-          </div>
-          <input type="file" id="logoFile" accept="image/*" style="display:none" aria-hidden="true">
-        </div>
-      </div>
-
-      <!-- Payment Methods -->
-      <div class="card sage-focus">
-        <h2 class="card-title">How Would You Like to Be Paid?</h2>
-        <p class="card-desc" style="margin-bottom:12px">Keeping your options open? Feel free to choose multiple payment methods.</p>
-        <div class="pay-methods">
-          <label class="checkbox-label">
-            <input type="checkbox" id="payBankTransfer" value="bank"> Bank Transfer
-          </label>
-          <div id="bankDetails" class="expand-panel" style="display:none">
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label for="bankAccHolder">Account Holder Name</label>
-                <input type="text" id="bankAccHolder">
-              </div>
-              <div class="form-group">
-                <label for="bankName">Bank Name</label>
-                <input type="text" id="bankName">
-              </div>
-            </div>
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label for="bankSort">Sort Code</label>
-                <input type="text" id="bankSort" maxlength="8" inputmode="numeric">
-                <span class="field-error" id="bankSortError" style="display:none">Sort code must be 6 digits (XX-XX-XX)</span>
-              </div>
-              <div class="form-group">
-                <label for="bankAcc">Account Number</label>
-                <input type="text" id="bankAcc" maxlength="8" inputmode="numeric">
-              </div>
-            </div>
-          </div>
-
-          <label class="checkbox-label">
-            <input type="checkbox" id="payCash" value="cash"> Cash on Completion
-          </label>
-
-          <label class="checkbox-label">
-            <input type="checkbox" id="payPaypal" value="paypal"> PayPal
-          </label>
-          <div id="paypalDetails" class="expand-panel" style="display:none">
-            <div class="form-group">
-              <label for="paypalRef">PayPal Email or Phone</label>
-              <input type="text" id="paypalRef">
-            </div>
-          </div>
-
-          <label class="checkbox-label">
-            <input type="checkbox" id="payOther" value="other"> Other
-          </label>
-          <div id="payOtherDetails" class="expand-panel" style="display:none">
-            <div class="form-group">
-              <label for="payOtherText">Payment Details</label>
-              <textarea id="payOtherText" rows="2" placeholder="e.g. Cheque made payable to..."></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Brand Colours -->
-      <div class="card price-list-card">
-        <h2 class="card-title">
-          Add Your Brand Colours
-          <button type="button" class="tooltip-btn" id="brandTooltipBtn" aria-label="Why set brand colours?">?</button>
-        </h2>
-        <div id="brandTooltip" class="tooltip-box" style="display:none">
-          <p>Every quote and invoice you send is a chance to get your name known. Add your brand colours once and every document goes out looking professional, helping customers recognise and remember you above the competition.</p>
-        </div>
-        <div class="colour-layout">
-          <!-- Left: colour pickers -->
-          <div class="colour-pickers">
-            <div class="colour-picker-group">
-              <label for="colourHeader">Header</label>
-              <div class="colour-input-row">
-                <input type="color" id="colourHeader" value="#7D5730" class="colour-swatch">
-              </div>
-            </div>
-            <div class="colour-picker-group">
-              <label for="colourAccent">Accent</label>
-              <div class="colour-input-row">
-                <input type="color" id="colourAccent" value="#6B7C5C" class="colour-swatch">
-              </div>
-            </div>
-            <div class="colour-picker-group">
-              <label for="colourBg">Background</label>
-              <div class="colour-input-row">
-                <input type="color" id="colourBg" value="#F5F0E8" class="colour-swatch">
-              </div>
-            </div>
-          </div>
-          <!-- Right: live preview -->
-          <div class="colour-preview-col">
-            <p class="cp-example-label">Example</p>
-            <div class="colour-preview" id="colourPreview">
-              <div class="cp-header" id="cpHeader">
-                <span id="cpBusinessName"><strong>Ace Trades</strong> <span class="cp-example-tag">EXAMPLE</span></span>
-                <span id="cpDocType">QUOTE</span>
-              </div>
-              <div class="cp-body" id="cpBody">
-                <div class="cp-col-header"><span class="cp-label" id="cpAccentSample">Job Description</span></div>
-                <div class="cp-row"><span>Parts</span><span>£150.00</span></div>
-                <div class="cp-row"><span>Labour</span><span>£75.00</span></div>
-                <div class="cp-total">Total: <strong>£225.00</strong></div>
-              </div>
-            </div>
-            <div class="colour-reset-row">
-              <button type="button" class="btn btn-sm btn-outline" id="resetColourMenu">Reset colours ▾</button>
-              <div id="resetColourDropdown" class="dropdown" style="display:none">
-                <button type="button" class="dropdown-item" data-reset="all">Reset All</button>
-                <button type="button" class="dropdown-item" data-reset="header">Reset Header</button>
-                <button type="button" class="dropdown-item" data-reset="accent">Reset Accent</button>
-                <button type="button" class="dropdown-item" data-reset="bg">Reset Background</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Page Footer -->
-      <div class="page-footer">
-        <button type="button" class="btn btn-primary btn-lg" id="saveBusinessBtn">Save My Business</button>
-        <button type="button" class="btn btn-primary btn-lg btn-next" id="goToPriceListBtn">Add Price List</button>
-      </div>
-    </section>
-
-    <!-- PAGE 2: PRICE LIST -->
-    <section id="page2" class="page" data-page="2">
-      <div class="page-header">
-        <h1 class="page-title" id="page2Title"><span class="page-num">2.</span> Build Your Price List</h1>
-        <p class="page-sub" id="page2Sub">Add the jobs you do most. You can always edit these later.</p>
-      </div>
-
-      <!-- Add Jobs -->
-      <div class="card sage-focus">
-        <div class="bulk-header-row">
-          <h2 class="card-title" style="margin-bottom:0">Build in Bulk</h2>
-          <span class="bulk-counter"><span id="bulkJobCount">0</span> Jobs Added</span>
-        </div>
-
-        <div class="add-jobs-columns">
-          <!-- CSV Upload -->
-          <div class="add-jobs-col">
-            <div class="upload-zone" id="csvUploadZone" tabindex="0" role="button" aria-label="Upload CSV or text file">
-              <span>Drag &amp; drop or tap to upload</span>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <small>Format: Job name, price, one per line</small>
-            </div>
-            <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" aria-hidden="true">
-          </div>
-
-          <!-- Bulk Paste -->
-          <div class="add-jobs-col">
-            <div class="paste-zone">
-              <span class="paste-zone-label">Paste jobs here</span>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-              <small>(one per line: Job name, price)</small>
-              <textarea id="bulkPaste" placeholder="" class="paste-zone-textarea"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Buttons row -->
-        <div class="add-jobs-btns">
-          <button type="button" class="btn btn-sm btn-outline" id="downloadTemplateBtn">Download Template</button>
-          <button type="button" class="btn btn-sage btn-sm" id="parseBulkBtn">Add</button>
-        </div>
-
-        <!-- Individual Add -->
-        <div class="individual-add">
-          <h3 class="card-title">Build One by One</h3>
-          <div class="obo-grid">
-            <div class="form-group obo-name">
-              <label for="jobName">Job Name</label>
-              <input type="text" id="jobName" placeholder="">
-            </div>
-            <div class="form-group obo-price">
-              <label for="jobPrice">Price</label>
-              <div class="input-pfx">
-                <span class="pfx-symbol">£</span>
-                <input type="number" id="jobPrice" placeholder="0" min="0" step="any">
-              </div>
-            </div>
-            <div class="form-group obo-unit">
-              <label for="jobUnit">Per Unit <span class="hint">(optional)</span></label>
-              <input type="text" id="jobUnit" placeholder="per room">
-            </div>
-            <div class="obo-add">
-              <button type="button" class="btn btn-sage btn-sm" id="addJobBtn">Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Price List -->
-      <div class="card">
-        <div class="card-header-row">
-          <h2 class="card-title">Your Price List</h2>
-          <span class="bulk-counter"><span id="priceListBadge">0</span> Jobs Added</span>
-        </div>
-        <div class="price-list-toolbar">
-          <input type="text" id="priceListSearch" placeholder="Search jobs..." class="search-input">
-          <button type="button" class="btn btn-sm btn-danger-outline" id="deleteSelectedBtn" style="display:none">Delete selected</button>
-        </div>
-        <div class="price-list-header">
-          <label class="checkbox-label compact">
-            <input type="checkbox" id="selectAllJobs"> Select all
-          </label>
-          <div class="sort-row">
-            <label for="sortJobs" class="sort-label">Sort:</label>
-            <select id="sortJobs" class="sort-select">
-              <option value="added">Date added</option>
-              <option value="name">Job</option>
-              <option value="price">Price</option>
-            </select>
-          </div>
-        </div>
-        <div id="priceListContainer" class="price-list-container">
-          <div class="empty-state" id="priceListEmpty">
-            <p>No jobs added yet. Add your first job above.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="page-footer">
-        <button type="button" class="btn btn-outline btn-lg" id="backToSetupBtn">Back</button>
-        <button type="button" class="btn btn-primary btn-lg btn-next" id="goToQuoteBtn">New Estimate or Quote</button>
-      </div>
-    </section>
-
-    <!-- PAGE 3: NEW QUOTE -->
-    <!-- PAGE 3a: CUSTOMER DETAILS -->
-    <section id="page3" class="page" data-page="3">
-      <div class="page-header">
-        <h1 class="page-title" id="page3Title">Estimates and Quotes</h1>
-        <p class="page-sub" id="page3Sub">Who is this for?</p>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">Customer Details</h2>
-        <div class="form-grid-cust-name" style="margin-top:4px">
-          <div class="form-group">
-            <label for="custTitle">Title</label>
-            <select id="custTitle">
-              <option value=""> </option>
-              <option value="Mr">Mr</option>
-              <option value="Mrs">Mrs</option>
-              <option value="Ms">Ms</option>
-              <option value="Dr">Dr</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="custFirstName">First Name</label>
-            <input type="text" id="custFirstName" autocomplete="given-name">
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label for="custLastName">Last Name</label>
-            <input type="text" id="custLastName" autocomplete="family-name">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="custAddr">Address</label>
-          <textarea id="custAddr" rows="3" autocomplete="street-address"></textarea>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="custPostcode">Postcode</label>
-            <input type="text" id="custPostcode" autocomplete="postal-code">
-          </div>
-          <div class="form-group">
-            <label for="custPhone">Phone</label>
-            <input type="tel" id="custPhone" autocomplete="tel">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="custEmail">Email</label>
-          <input type="email" id="custEmail" autocomplete="email">
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="docRef">Reference</label>
-            <input type="text" id="docRef" placeholder="EST-001">
-          </div>
-          <div class="form-group">
-            <label for="docDate">Date</label>
-            <input type="date" id="docDate">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="quotePrivateNotes">Private Notes <span class="hint">(not shown on document)</span></label>
-          <textarea id="quotePrivateNotes" rows="2" placeholder="Add private notes such as access codes, pets on site, or important customer information."></textarea>
-        </div>
-        <button type="button" class="btn btn-primary btn-lg w-100" id="saveCustomerGoToJobsBtn" style="margin-top:8px">Save &amp; Add Jobs</button>
-      </div>
-    </section>
-
-    <!-- PAGE 3b: ADD JOBS -->
-    <section id="page-jobs" class="page">
-      <div class="page-header">
-        <h1 class="page-title">Add Jobs</h1>
-        <p class="page-sub" id="pageJobsSub">What work are you quoting for?</p>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">Select from Your Price List</h2>
-        <div class="picker-search-row">
-          <input type="text" id="jobPickerSearch" placeholder="Search your price list..." class="search-input">
-          <button type="button" class="btn-mic" id="voiceBtn" title="Speak a job">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93V21H9v2h6v-2h-2v-2.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8.001 8.001 0 0 0 7 7.93z"/></svg>
-          </button>
-        </div>
-        <div id="voiceBox" class="voice-box hidden"></div>
-        <div id="jobPickerList" class="picker-list"></div>
-
-        <div class="custom-item-add">
-          <h3 class="section-sub">Add a one-off item</h3>
-          <div class="form-grid-3">
-            <div class="form-group fg-grow">
-              <label for="customItemName">Description</label>
-              <input type="text" id="customItemName" placeholder="e.g. Materials">
-            </div>
-            <div class="form-group">
-              <label for="customItemPrice">Price</label>
-              <div class="input-pfx">
-                <span class="pfx-symbol">£</span>
-                <input type="number" id="customItemPrice" placeholder="0" min="0" step="any">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="customItemUnit">Unit</label>
-              <input type="text" id="customItemUnit" placeholder="each">
-            </div>
-          </div>
-          <button type="button" class="btn btn-sage btn-sm" id="addCustomItemBtn">Add</button>
-        </div>
-
-        <div class="pj-selected-header">
-          <h3 class="section-sub" style="margin:0">Added Jobs</h3>
-        </div>
-        <div id="quoteItemsContainer" class="quote-items-container">
-          <div class="empty-state" id="quoteItemsEmpty">
-            <p>No jobs added yet.</p>
-          </div>
-        </div>
-
-        <div class="pj-footer-btns">
-          <button type="button" class="btn btn-outline btn-lg" id="backToCustomerBtn">← Back</button>
-          <button type="button" class="btn btn-primary btn-lg" id="saveJobsGoToCompletionBtn">Save and Complete</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE 3c: COMPLETION & SIGNATURE -->
-    <section id="page-completion" class="page">
-      <div class="page-header">
-        <h1 class="page-title">Completion &amp; Signature</h1>
-      </div>
-
-      <div class="doc-type-chooser">
-        <label class="dtc-option" for="dtEstimate">
-          <input type="radio" name="docType" id="dtEstimate" value="Estimate">
-          <span class="dtc-card">
-            <span class="dtc-tick"></span>
-            Estimate
-          </span>
-        </label>
-        <label class="dtc-option" for="dtQuote">
-          <input type="radio" name="docType" id="dtQuote" value="Quote">
-          <span class="dtc-card">
-            <span class="dtc-tick"></span>
-            Quote
-          </span>
-        </label>
-      </div>
-
-      <div class="card">
-        <div class="totals-block">
-          <div class="totals-row"><span>Subtotal</span><span id="qSubtotal">£0.00</span></div>
-          <div class="totals-row totals-discount" id="discountRow" style="display:none"><span>Discount</span><span id="qDiscount">-£0.00</span></div>
-          <div class="totals-row totals-vat" id="vatRow" style="display:none"><span>VAT</span><span id="qVatAmount">£0.00</span></div>
-          <div class="totals-row totals-total"><span>Total</span><span id="qTotal">£0.00</span></div>
-        </div>
-
-        <div class="dvv-grid" style="margin-top:16px">
-          <div class="form-group" style="margin-bottom:0">
-            <label for="discountPct">Discount</label>
-            <select id="discountPct" class="vat-select">
-              <option value="0">0%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="20">20%</option>
-              <option value="custom">Custom</option>
-            </select>
-            <input type="number" id="discountCustom" min="0" max="100" step="1" placeholder="%" class="vat-custom" style="display:none">
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label for="vatSelect">VAT</label>
-            <select id="vatSelect" class="vat-select">
-              <option value="0">0%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="20">20%</option>
-              <option value="custom">Custom</option>
-            </select>
-            <input type="number" id="vatCustom" min="0" max="100" step="1" placeholder="%" class="vat-custom" style="display:none">
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label for="docValidFor">Valid For</label>
-            <select id="docValidFor">
-              <option value="7">7 days</option>
-              <option value="14" selected>14 days</option>
-              <option value="30">30 days</option>
-              <option value="custom">Custom&hellip;</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group" id="validCustomGroup" style="display:none;margin-top:8px">
-          <label for="docValidCustom">Custom validity (days)</label>
-          <input type="number" id="docValidCustom" min="1" placeholder="60">
-        </div>
-
-        <div class="form-group" style="margin-top:16px">
-          <label for="quoteNotes">Notes to Customer</label>
-          <textarea id="quoteNotes" rows="4" placeholder="Thank you for your enquiry. Please note..."></textarea>
-        </div>
-
-        <div style="margin-top:16px">
-          <label>Terms &amp; Conditions</label>
-          <div class="terms-options">
-            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="payment30"> Payment due within 30 days of invoice date.</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="depositRequired"> A 50% deposit is required before work commences.</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="quotationValid"> This quotation is valid for 30 days from the date shown.</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="materialsExtra"> Materials are not included unless stated above.</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="terms" value="cancellation"> Cancellation within 48 hours of scheduled start date may incur a charge.</label>
-          </div>
-          <div class="form-group" style="margin-top:12px">
-            <label for="customTerms">Additional Terms</label>
-            <textarea id="customTerms" rows="1" placeholder=""></textarea>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top:24px">
-          <label for="authSig">Authorised Signature</label>
-          <input type="text" id="authSig" placeholder="">
-        </div>
-        <div class="form-group">
-          <label>Signature Preview</label>
-          <input type="text" id="custSigText" class="sig-text-input" placeholder="">
-          <p class="sig-hint-text">To change this signature, delete and type preferred name or leave blank if you would prefer to print and sign.</p>
-        </div>
-      </div>
-
-      <div class="page-footer quote-footer">
-        <button type="button" class="btn btn-sage btn-lg" id="previewQuoteBtn">👁 Preview</button>
-        <button type="button" class="btn btn-sage btn-lg" id="saveQuoteBtn">✓ Save</button>
-        <button type="button" class="btn btn-sage btn-lg" id="printQuoteBtn">⎙ Print</button>
-        <button type="button" class="btn btn-sage btn-lg" id="sendQuoteBtn">⇧ Send</button>
-      </div>
-    </section>
-
-    <!-- PAGE 4: SAVED DOCUMENTS -->
-    <section id="page4" class="page" data-page="4">
-      <div class="page-header">
-        <h1 class="page-title" id="savedJobsTitle">My Saved Jobs</h1>
-      </div>
-      <!-- Nav hint popup (shown after first save) -->
-      <div class="nav-hint-popup" id="navHintPopup" style="display:none" role="dialog" aria-modal="true">
-        <button class="nav-hint-close" id="navHintClose" aria-label="Close">&#x2715;</button>
-        <div class="nav-hint-body">
-          <p class="nav-hint-msg">What would you like to do next? Use the menu above to explore everything Lexi can help you with.</p>
-        </div>
-        <label class="nav-hint-suppress">
-          <input type="checkbox" id="navHintSuppress"> Do not show me this message again
-        </label>
-      </div>
-      <div class="saved-filter-bar">
-        <label for="savedFilterSelect" class="saved-filter-label">Show:</label>
-        <select id="savedFilterSelect" class="saved-filter-select">
-          <option value="all">All</option>
-          <option value="Estimate">Estimates</option>
-          <option value="Quote">Quotes</option>
-          <option value="invoiced">Invoiced</option>
-          <option value="overdue">Overdue</option>
-          <option value="paid">Paid</option>
-          <option value="unpaid">Unpaid</option>
-          <option value="accepted">Accepted</option>
-        </select>
-        <div class="export-group">
-          <label for="exportSelect" class="saved-filter-label">Export:</label>
-          <select id="exportSelect" class="saved-filter-select export-select">
-            <option value="all" selected>All</option>
-            <option value="Estimate">Estimates</option>
-            <option value="Quote">Quotes</option>
-            <option value="invoiced">Invoiced</option>
-            <option value="paid">Paid</option>
-            <option value="unpaid">Unpaid</option>
-          </select>
-        </div>
-      </div>
-      <div id="savedDocsList" class="saved-docs-list">
-        <div class="empty-state" id="savedDocsEmpty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <p>No saved documents yet.</p>
-          <button type="button" class="btn btn-primary" id="createFirstQuoteBtn">Create your first quote</button>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- PREVIEW MODAL -->
-  <div id="previewModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Document Preview">
-    <div class="modal-card preview-modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">Preview</h2>
-        <button type="button" class="modal-close" id="closePreviewBtn" aria-label="Close preview">✕</button>
-      </div>
-      <div id="previewContent" class="preview-content"></div>
-      <div class="modal-footer preview-footer">
-        <button type="button" class="btn btn-outline" id="previewEditBtn">✎ Edit</button>
-        <button type="button" class="btn btn-outline" id="previewPrintBtn">⎙ Print</button>
-        <button type="button" class="btn btn-success" id="previewSaveBtn">✓ Save</button>
-        <button type="button" class="btn btn-primary" id="previewSendBtn">⇧ Send</button>
+  <!-- ===== BRIDGE ===== -->
+  <section class="bridge-section">
+    <div class="container">
+      <h2>Want Lexi to do even more?</h2>
+      <p>The templates are a great start. But the app does the whole job — estimates, invoices, customer tracking, payment chasing — all from your phone, in minutes.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="#pricing" class="btn btn-sage btn-lg">See what the app does</a>
+        <a href="YOUR_APP_URL" class="btn btn-outline btn-lg" target="_blank">Try it free now</a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- QUOTE MODAL -->
-  <div id="quoteModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Send Quote">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title" id="quoteModalTitle">Send Quote</h2>
-        <button type="button" class="modal-close" id="closeQuoteBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="quoteCustFirst">Customer First Name</label>
-            <input type="text" id="quoteCustFirst">
-          </div>
-          <div class="form-group">
-            <label for="quoteCustLast">Customer Last Name</label>
-            <input type="text" id="quoteCustLast">
-          </div>
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <p class="section-eyebrow">The App</p>
+      <h2 class="section-title">Three steps. That's all it takes.</h2>
+      <p class="section-sub">No training. No manual. Just open it on your phone and get going.</p>
+      <div class="steps-row">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Set up your business</h3>
+          <p>Your name, logo and trade. Takes two minutes and you only do it once.</p>
         </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="quoteRef">Reference</label>
-            <input type="text" id="quoteRef" placeholder="LEXI-101">
-          </div>
-          <div class="form-group">
-            <label for="quoteSendDate">Date</label>
-            <input type="date" id="quoteSendDate">
-          </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Build your price list</h3>
+          <p>Add your jobs and prices. Lexi remembers them so you just tap next time.</p>
         </div>
-        <div class="form-group">
-          <label for="quoteItemsText">Jobs and Prices</label>
-          <textarea id="quoteItemsText" rows="4" placeholder="One job per line, for example: Deep clean, 120"></textarea>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Create and send</h3>
+          <p>Pick your customer, tap your jobs, send your estimate or invoice. Done.</p>
         </div>
-        <div class="form-group">
-          <label for="quoteTotalOverride">Total</label>
-          <div class="input-pfx">
-            <span class="pfx-symbol">£</span>
-            <input type="number" id="quoteTotalOverride" min="0" step="any">
-          </div>
-        </div>
-        <label class="checkbox-label compact"><input type="checkbox" id="quoteIncludePhotos"> Add before and after photos on page 2</label>
-        <div class="form-group">
-          <label for="quoteSendNotes">Notes</label>
-          <textarea id="quoteSendNotes" rows="3" placeholder="Thank you for your enquiry..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer preview-footer">
-        <button type="button" class="btn btn-outline" id="quoteEditBtn">✎ Edit</button>
-        <button type="button" class="btn btn-outline" id="quotePreviewBtn">👁 Preview</button>
-        <button type="button" class="btn btn-success" id="quoteSaveBtn">✓ Save</button>
-        <button type="button" class="btn btn-primary" id="quoteSendBtn">⇧ Send</button>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- INVOICE MODAL -->
-  <div id="invoiceModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Invoice">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">Invoice</h2>
-        <button type="button" class="modal-close" id="closeInvoiceBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="invCustFirst">Customer First Name</label>
-            <input type="text" id="invCustFirst">
-          </div>
-          <div class="form-group">
-            <label for="invCustLast">Customer Last Name</label>
-            <input type="text" id="invCustLast">
-          </div>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="invRef">Invoice Reference</label>
-            <input type="text" id="invRef" placeholder="INV-001">
-          </div>
-          <div class="form-group">
-            <label for="invDate">Invoice Date</label>
-            <input type="date" id="invDate">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="invDueDate">Due Date</label>
-          <input type="date" id="invDueDate">
-        </div>
-        <div class="form-group">
-          <label for="invItemsText">Jobs and Prices</label>
-          <textarea id="invItemsText" rows="6" placeholder="One job per line, for example:&#10;Boiler service, 120&#10;Power flush, 350"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="invTotalOverride">Invoice Total</label>
-          <div class="input-pfx">
-            <span class="pfx-symbol">£</span>
-            <input type="number" id="invTotalOverride" min="0" step="any">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Payment Methods <span class="hint">(tick all that apply)</span></label>
-          <div class="inv-pay-methods">
-            <label class="checkbox-label compact"><input type="checkbox" name="invPayMethod" value="Bank Transfer"> Bank Transfer</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="invPayMethod" value="Cash"> Cash</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="invPayMethod" value="PayPal"> PayPal</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="invPayMethod" value="Card"> Card</label>
-            <label class="checkbox-label compact"><input type="checkbox" name="invPayMethod" value="Other"> Other</label>
-          </div>
-        </div>
-        <label class="checkbox-label compact"><input type="checkbox" id="invIncludePhotos"> Add before and after photos on page 2</label>
-        <div class="form-group" style="margin-top:16px">
-          <label for="invNotes">Notes</label>
-          <textarea id="invNotes" rows="3" placeholder="Thank you for choosing us..."></textarea>
+  <!-- ===== PRICING ===== -->
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <p class="section-eyebrow">Simple Pricing</p>
+      <h2 class="section-title">Start free. Upgrade when you're ready.</h2>
+      <p class="section-sub">No contracts. No hidden fees. Cancel any time.</p>
+
+      <!-- Early adopter banner -->
+      <div class="early-adopter-banner">
+        <div class="ea-icon">🔒</div>
+        <div class="ea-text">
+          <strong>Early Adopter Offer — Lock in your price for life</strong>
+          <span>Join now and your price never goes up, as long as your subscription stays active. Tradesman £10/mo (standard £15) &nbsp;·&nbsp; Master £15/mo (standard £25)</span>
         </div>
       </div>
-      <div class="modal-footer preview-footer">
-        <button type="button" class="btn btn-outline" id="invEditBtn">✎ Edit</button>
-        <button type="button" class="btn btn-outline" id="invPreviewBtn">👁 Preview</button>
-        <button type="button" class="btn btn-success" id="invSaveBtn">✓ Save</button>
-        <button type="button" class="btn btn-primary" id="invSendBtn">⇧ Send</button>
+
+      <div class="pricing-grid">
+
+        <!-- APPRENTICE -->
+        <div class="price-card">
+          <p class="price-tier">Apprentice</p>
+          <div class="price-amount">£0 <span>forever</span></div>
+          <p class="price-limit">5 jobs / month</p>
+          <p class="price-desc">For someone just starting out who wants to try Lexi properly.</p>
+          <hr class="price-divider">
+          <ul class="price-features">
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Estimates, quotes, invoices &amp; receipts</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Your logo on documents</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Lexi's Pricing Guide — 150 jobs, 10 trades</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full customer dashboard</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Job history per customer</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Email &amp; phone contact</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Email message templates</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Export to CSV &amp; backup</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Custom brand colours</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> WhatsApp integration</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Payment tracking &amp; overdue alerts</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Before &amp; after photos</li>
+          </ul>
+          <a href="YOUR_APP_URL" class="btn btn-outline btn-full" target="_blank">Try free — no card needed</a>
+        </div>
+
+        <!-- TRADESMAN -->
+        <div class="price-card featured">
+          <div class="price-badge">Most Popular</div>
+          <p class="price-tier">Tradesman</p>
+          <div class="price-amount">£10 <span>/ month</span></div>
+          <div class="price-was">Early adopter price — standard £15/mo</div>
+          <p class="price-limit">10 jobs / month</p>
+          <p class="price-desc">For the busy tradesperson who wants to look professional and get paid on time.</p>
+          <hr class="price-divider">
+          <ul class="price-features">
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Everything in Apprentice</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Your logo &amp; brand colours</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> No Lexi footer branding</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp &amp; email templates</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Payment tracking &amp; overdue alerts</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Payment due status badge</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Before &amp; after photo storage</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited price list jobs</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Calendar &amp; scheduling</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Smart payment reminders</li>
+            <li class="locked"><svg class="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Recurring jobs</li>
+          </ul>
+          <a href="YOUR_STRIPE_TRADESMAN_LINK" class="btn btn-walnut btn-full">Get Tradesman — £10/mo</a>
+        </div>
+
+        <!-- MASTER -->
+        <div class="price-card">
+          <div class="price-badge" style="background:var(--sage)">Coming Soon</div>
+          <p class="price-tier">Master</p>
+          <div class="price-amount">£15 <span>/ month</span></div>
+          <div class="price-was">Early adopter price — standard £25/mo</div>
+          <p class="price-limit">Unlimited jobs</p>
+          <p class="price-desc">For the tradesperson running a proper operation.</p>
+          <hr class="price-divider">
+          <ul class="price-features">
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Everything in Tradesman</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited jobs per month</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Calendar &amp; job scheduling</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Smart payment reminders</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Quote follow-up nudges</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Recurring jobs</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Job profitability tracking</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Customer quote acceptance link</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Annual earnings summary</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full CRM — value, jobs, pipeline</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Multiple businesses in one app</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Switch between businesses instantly</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Separate branding &amp; price list per business</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Shared customer list across all businesses</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority support &amp; early access</li>
+            <li><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Founding member badge</li>
+          </ul>
+          <a href="#free-templates" class="btn btn-outline btn-full">Join the waitlist</a>
+          <p class="price-coming">Sign up for free templates above and I'll notify you when Master launches.</p>
+        </div>
+
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- RECEIPT MODAL -->
-  <div id="receiptModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Receipt">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">Receipt</h2>
-        <button type="button" class="modal-close" id="closeReceiptBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="recRef">Receipt Reference</label>
-          <input type="text" id="recRef" placeholder="REC-001">
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-logo">
+          <img src="1 Lexi Handles It Transparent.png" alt="Lexi Handles It" class="footer-logo-img" onerror="this.style.display='none'">
+          <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="footer-strap-img" onerror="this.style.display='none'">
         </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="recCustFirst">Customer First Name</label>
-            <input type="text" id="recCustFirst">
-          </div>
-          <div class="form-group">
-            <label for="recCustLast">Customer Last Name</label>
-            <input type="text" id="recCustLast">
-          </div>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="recAmount">Amount Paid</label>
-            <div class="input-pfx">
-              <span class="pfx-symbol">£</span>
-              <input type="number" id="recAmount" min="0" step="any" placeholder="0">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="recDate">Payment Date</label>
-            <input type="date" id="recDate">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>How was it paid? <span class="hint">(tick all that apply)</span></label>
-          <div class="rec-pay-split">
-            <div class="rec-pay-row">
-              <label class="checkbox-label compact rec-pay-label"><input type="checkbox" name="recPayMethod" value="Bank Transfer"> Bank Transfer</label>
-              <div class="input-pfx rec-pay-amt"><span class="pfx-symbol">£</span><input type="number" name="recPayAmt" data-method="Bank Transfer" min="0" step="any" placeholder="0.00"></div>
-            </div>
-            <div class="rec-pay-row">
-              <label class="checkbox-label compact rec-pay-label"><input type="checkbox" name="recPayMethod" value="Cash"> Cash</label>
-              <div class="input-pfx rec-pay-amt"><span class="pfx-symbol">£</span><input type="number" name="recPayAmt" data-method="Cash" min="0" step="any" placeholder="0.00"></div>
-            </div>
-            <div class="rec-pay-row">
-              <label class="checkbox-label compact rec-pay-label"><input type="checkbox" name="recPayMethod" value="PayPal"> PayPal</label>
-              <div class="input-pfx rec-pay-amt"><span class="pfx-symbol">£</span><input type="number" name="recPayAmt" data-method="PayPal" min="0" step="any" placeholder="0.00"></div>
-            </div>
-            <div class="rec-pay-row">
-              <label class="checkbox-label compact rec-pay-label"><input type="checkbox" name="recPayMethod" value="Card"> Card</label>
-              <div class="input-pfx rec-pay-amt"><span class="pfx-symbol">£</span><input type="number" name="recPayAmt" data-method="Card" min="0" step="any" placeholder="0.00"></div>
-            </div>
-            <div class="rec-pay-row">
-              <label class="checkbox-label compact rec-pay-label"><input type="checkbox" name="recPayMethod" value="Other"> Other</label>
-              <div class="input-pfx rec-pay-amt"><span class="pfx-symbol">£</span><input type="number" name="recPayAmt" data-method="Other" min="0" step="any" placeholder="0.00"></div>
-            </div>
-          </div>
-        </div>
-        <label class="checkbox-label compact"><input type="checkbox" id="recIncludePhotos"> Add before and after photos on page 2</label>
-        <div class="form-group">
-          <label for="recNotes">Notes</label>
-          <textarea id="recNotes" rows="3" placeholder="Thank you for your payment..."></textarea>
+        <div class="footer-links">
+          <a href="#free-templates">Free Templates</a>
+          <a href="#pricing">Pricing</a>
+          <a href="YOUR_APP_URL" target="_blank">Try the App</a>
+          <a href="mailto:hello@lexihandlesit.com">Contact</a>
         </div>
       </div>
-      <div class="modal-footer preview-footer">
-        <button type="button" class="btn btn-outline" id="recEditBtn">✎ Edit</button>
-        <button type="button" class="btn btn-outline" id="recPreviewBtn">👁 Preview</button>
-        <button type="button" class="btn btn-success" id="recSaveBtn">✓ Save</button>
-        <button type="button" class="btn btn-primary" id="recSendBtn">⇧ Send</button>
-      </div>
+      <p class="footer-copy">&copy; 2026 Lexi Handles It. Built for UK tradespeople. &nbsp;|&nbsp; <a href="#" style="color:inherit">Privacy Policy</a> &nbsp;|&nbsp; <a href="#" style="color:inherit">Terms</a></p>
     </div>
-  </div>
+  </footer>
 
-  <!-- MONEY IN MODAL -->
-  <div id="markPaidModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Log Payment">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title" id="markPaidTitle">Money In</h2>
-        <button type="button" class="modal-close" id="closeMarkPaidBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <!-- Previous payment summary — shown only when partial payment exists -->
-        <div id="mpPrevInfo" class="mp-prev-info" style="display:none"></div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="mpAmount">Amount Received</label>
-            <div class="input-pfx">
-              <span class="pfx-symbol">£</span>
-              <input type="number" id="mpAmount" min="0" step="any" placeholder="0">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="mpDate">Date Received</label>
-            <input type="date" id="mpDate">
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="cancelMarkPaidBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="confirmMarkPaidBtn">Log Payment</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CLIENT PICKER MODAL (New Invoice / New Receipt from menu) -->
-  <div id="clientPickerModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title" id="clientPickerTitle">Who would you like to invoice?</h2>
-        <button type="button" class="modal-close" id="closeClientPickerBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div id="clientPickerWarning" class="cp-warning" style="display:none"></div>
-        <button type="button" class="btn btn-outline btn-full" id="clientPickerNewCustomerBtn">New Customer</button>
-        <div id="clientPickerList" class="cp-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT PAYMENTS MODAL -->
-  <div id="editPaymentsModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Payment History">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Payment History</h2>
-        <button type="button" class="modal-close" id="closeEditPaymentsBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div id="editPaymentsList"></div>
-        <div class="add-payment-section">
-          <h3 class="section-sub">Add Payment</h3>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="epAddAmount">Amount</label>
-              <div class="input-pfx">
-                <span class="pfx-symbol">£</span>
-                <input type="number" id="epAddAmount" min="0" step="any" placeholder="0">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="epAddDate">Date</label>
-              <input type="date" id="epAddDate">
-            </div>
-          </div>
-          <button type="button" class="btn btn-success btn-full" id="addPaymentBtn">+ Add Payment</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="doneEditPaymentsBtn">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT CHOICE MODAL -->
-  <div id="editChoiceModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Choose what to edit">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">What would you like to edit?</h2>
-        <button type="button" class="modal-close" id="closeEditChoiceBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body stacked-actions">
-        <button type="button" class="btn btn-success btn-full" id="editChoiceMoneyBtn">Money In</button>
-        <button type="button" class="btn btn-primary btn-full" id="editChoiceJobBtn">Job Details</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JOB PHOTOS MODAL -->
-  <div id="photosModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Job photos">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">Before and After Photos</h2>
-        <button type="button" class="modal-close" id="closePhotosBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="beforePhotosInput">Before Photos (up to 3)</label>
-          <input type="file" id="beforePhotosInput" accept="image/*" multiple>
-          <div id="beforePhotosPreview" class="photo-preview-grid"></div>
-        </div>
-        <div class="form-group">
-          <label for="afterPhotosInput">After Photos (up to 3)</label>
-          <input type="file" id="afterPhotosInput" accept="image/*" multiple>
-          <div id="afterPhotosPreview" class="photo-preview-grid"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="savePhotosBtn">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RECEIPT OUTSTANDING MODAL -->
-  <div id="receiptOutstandingModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Outstanding payment">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Send Receipt?</h2>
-        <button type="button" class="modal-close" id="closeOutstandingBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <p id="outstandingMsg">Payment history shows funds outstanding. Do you still wish to send a receipt anyway?</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="outstandingNoBtn">No</button>
-        <button type="button" class="btn btn-primary" id="outstandingYesBtn">Yes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PREVIEW FIRST MODAL -->
-  <div id="previewFirstModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Preview first">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Preview First?</h2>
-        <button type="button" class="modal-close" id="closePreviewFirstBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Would you like to preview first?</p>
-        <label class="checkbox-label compact"><input type="checkbox" id="dontShowPreviewFirst"> Do not show me this message again</label>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="previewFirstNoBtn">No</button>
-        <button type="button" class="btn btn-primary" id="previewFirstYesBtn">Yes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SEND BANK DETAILS MODAL -->
-  <div id="bankDetailsModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Send bank details">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title">Send Bank Details</h2>
-        <button type="button" class="modal-close" id="closeBankDetailsBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <textarea id="bankDetailsShareText" rows="8" class="share-textarea"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="copyBankDetailsBtn">Copy</button>
-        <button type="button" class="btn btn-primary" id="shareBankDetailsBtn">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- INDIVIDUAL CUSTOMER MODAL -->
-  <div id="customerDashboardModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Individual customer dashboard">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title" id="customerDashboardTitle">Customer</h2>
-        <button type="button" class="modal-close" id="closeCustomerDashboardBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body" id="customerDashboardBody"></div>
-    </div>
-  </div>
-
-  <!-- CUSTOMER EDIT CHOICE MODAL -->
-  <div id="customerEditChoiceModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="What would you like to edit?">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">What would you like to edit?</h2>
-        <button type="button" class="modal-close" id="closeCustEditChoiceBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body cec-row" id="custEditChoiceMain">
-        <button type="button" class="btn btn-sage btn-full cec-btn" id="custEditDetailsBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Customer Details
-        </button>
-        <button type="button" class="btn btn-sage btn-full cec-btn" id="custEditJobBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Job Details
-        </button>
-        <button type="button" class="btn btn-sage btn-full cec-btn" id="custEditMoneyBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><text x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="bold" font-family="Arial,sans-serif" fill="currentColor" stroke="none">£</text></svg>
-          Money In
-        </button>
-      </div>
-      <div id="custEditJobPicker" style="display:none" class="modal-body"></div>
-    </div>
-  </div>
-
-  <!-- CUSTOMER DETAILS EDIT MODAL -->
-  <div id="customerDetailsEditModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Edit Customer Details">
-    <div class="modal-card modal-card-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Customer Details</h2>
-        <button type="button" class="modal-close" id="closeCustDetailsEditBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid-cust-name">
-          <div class="form-group">
-            <label for="cdeCustTitle">Title</label>
-            <select id="cdeCustTitle">
-              <option value=""> </option>
-              <option value="Mr">Mr</option>
-              <option value="Mrs">Mrs</option>
-              <option value="Ms">Ms</option>
-              <option value="Dr">Dr</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="cdeCustFirst">First Name</label>
-            <input type="text" id="cdeCustFirst" autocomplete="given-name">
-          </div>
-          <div class="form-group">
-            <label for="cdeCustLast">Last Name</label>
-            <input type="text" id="cdeCustLast" autocomplete="family-name">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="cdeCustAddr">Address</label>
-          <textarea id="cdeCustAddr" rows="3" autocomplete="street-address"></textarea>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="cdeCustPostcode">Postcode</label>
-            <input type="text" id="cdeCustPostcode" autocomplete="postal-code">
-          </div>
-          <div class="form-group">
-            <label for="cdeCustPhone">Phone</label>
-            <input type="tel" id="cdeCustPhone" autocomplete="tel">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="cdeCustEmail">Email</label>
-          <input type="email" id="cdeCustEmail" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="cdeCustPrivateNotes">Private Notes</label>
-          <textarea id="cdeCustPrivateNotes" rows="3" placeholder="Notes visible only to you - not shown on documents"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="cancelCustDetailsEditBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="saveCustDetailsBtn">Save Details</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JOB DETAILS EDIT MODAL -->
-  <div id="jobDetailsEditModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Edit Job Details">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 class="modal-title" id="jobDetailsEditTitle">Job Details</h2>
-        <button type="button" class="modal-close" id="closeJobDetailsEditBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body" id="jobDetailsEditBody">
-        <!-- rendered dynamically -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="cancelJobDetailsEditBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="saveJobDetailsBtn">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST -->
-  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
-
-  <script src="script.js"></script>
 </body>
 </html>
