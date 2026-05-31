@@ -21,9 +21,10 @@
           <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="nav-strap-img" onerror="this.style.display='none'">
         </a>
         <div class="nav-actions">
-          <a href="#free-guides" class="btn btn-outline">Free Guides</a>
-          <a href="#free-templates" class="btn btn-outline">Free Templates</a>
-          <a href="#pricing" class="btn btn-walnut">Get the App</a>
+          <a href="#free-templates" class="btn btn-walnut nav-btn"><span class="script-gold-sm">Free</span> Templates</a>
+          <a href="#free-guides" class="btn btn-walnut nav-btn"><span class="script-gold-sm">Free</span> Guides</a>
+          <a href="#pricing" class="btn btn-walnut nav-btn"><span class="script-gold-sm">Free</span> App</a>
+          <a href="YOUR_APP_URL" class="btn btn-sage nav-btn nav-btn-logon" target="_blank">Log On</a>
         </div>
       </div>
     </div>
@@ -34,7 +35,7 @@
     <div class="hero-img-full">
       <img src="Opening Image.png" alt="You know your trade. Lexi's your upgrade." class="hero-full-img">
       <div class="hero-text-overlay">
-        <h1>Hi, I'm Lexi. I help tradespeople who are brilliant at the job send professional estimates, quotes, invoices and receipts.</h1>
+        <h1>Hi, I'm Lexi.<br>I help tradespeople who are brilliant at the job send professional estimates, quotes, invoices and receipts. Fast!</h1>
         <div class="hero-split">
           <div class="hero-split-col">
             <p class="hero-sub">You can grab your <span class="script-gold">free</span> templates and do it yourself. Old school!</p>
@@ -52,9 +53,8 @@
   <!-- ===== FREE TEMPLATES ===== -->
   <section class="templates-section" id="free-templates">
     <div class="container">
-      <p class="section-eyebrow">Completely Free</p>
-      <h2 class="section-title">6 free tools every tradesperson needs</h2>
-      <p class="section-sub">Professional documents, ready to download. No sign-up needed.</p>
+      <p class="section-heading-label">Your Document Templates</p>
+      <h2 class="section-title">Here are your six <span class="script-gold">free</span> document templates. Old school. No app. Just download and get on with it.</h2>
 
       <!-- ── Clipboard grid ── -->
       <div class="fb-grid">
@@ -129,24 +129,118 @@
 
       <!-- Email capture -->
       <div class="capture-box">
-        <h3>Want me to send all 6 straight to your inbox?</h3>
-        <p>Drop your name and email and I'll send them straight over. No spam. Unsubscribe any time.</p>
-        <!-- ★ REPLACE ACTION WITH YOUR MAILCHIMP FORM URL ★ -->
-        <form class="capture-form" action="YOUR_MAILCHIMP_FORM_URL" method="post" target="_blank">
-          <input type="text" name="FNAME" placeholder="Your first name" required>
-          <input type="email" name="EMAIL" placeholder="Your email address" required>
-          <button type="submit" class="btn btn-walnut btn-full">Send me my free templates, Lexi</button>
-        </form>
-        <p class="capture-note">Your details are safe. I'll only use them to send you the templates and occasional useful updates.</p>
+        <h3>Shall I send all six <span class="script-gold">free</span> templates direct to your inbox?</h3>
+        <!-- ★ REPLACE HREF WITH YOUR MAILCHIMP FORM URL ★ -->
+        <a href="YOUR_MAILCHIMP_FORM_URL" class="btn btn-walnut btn-full" target="_blank">Yes! Send me my templates, Lexi</a>
       </div>
 
     </div>
   </section>
 
+  <!-- ===== LEXI APP SHOWCASE ===== -->
+  <section class="app-bridge-section" id="lexi-app">
+    <div class="container">
+      <p class="section-heading-label">Lexi App</p>
+      <h2 class="section-title">Here's how the Lexi App can help you do everything above, professionally from your phone and elevate your brand without lifting a pen.</h2>
+    </div>
+
+    <!-- 3-page device mockup showcase -->
+    <div class="app-showcase-scroller">
+
+      <!-- Page 1: Tablet (estimate) + Phone (job picker) -->
+      <div class="showcase-page">
+        <div class="showcase-canvas" data-cw="1140" data-ch="940" style="width:1140px;height:940px;">
+
+          <div class="sc-frame" style="left:40px;top:62px;">
+            <div class="sc-device sc-tablet" style="width:616px;height:801px;border-radius:40px;">
+              <span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:24px;border-radius:14px;background:#F5F0E8;">
+                <img src="images/mockup/screen-estimate.png" alt="Harper Garden Services branded estimate" />
+              </div>
+            </div>
+            <div class="sc-shadow" style="width:78%;height:48px;bottom:-24px;"></div>
+          </div>
+
+          <div class="sc-frame" style="left:700px;top:80px;">
+            <div class="sc-device" style="width:400px;height:775px;border-radius:54px;">
+              <span class="sc-b-vol"></span><span class="sc-b-pwr"></span><span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:14px;border-radius:40px;background:#ffffff;">
+                <img src="images/mockup/screen-jobpicker.png" alt="Job picker — gardening price list" />
+              </div>
+            </div>
+            <div class="sc-shadow"></div>
+          </div>
+
+        </div>
+        <div class="sc-hint">SCROLL
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Page 2: Brand colours (left) + Customer dashboard (right) -->
+      <div class="showcase-page">
+        <div class="showcase-canvas" data-cw="880" data-ch="920" style="width:880px;height:920px;">
+
+          <div class="sc-frame" style="left:60px;top:48px;transform:rotate(-3deg);transform-origin:bottom center;z-index:1;">
+            <div class="sc-device" style="width:378px;height:800px;border-radius:54px;">
+              <span class="sc-b-vol"></span><span class="sc-b-pwr"></span><span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:14px;border-radius:42px;background:#F5F0E8;">
+                <img src="images/mockup/screen-brand.png" alt="Add your business logo and brand colours" />
+              </div>
+            </div>
+            <div class="sc-shadow"></div>
+          </div>
+
+          <div class="sc-frame" style="left:374px;top:44px;transform:rotate(3deg);transform-origin:bottom center;z-index:2;">
+            <div class="sc-device" style="width:440px;height:823px;border-radius:54px;">
+              <span class="sc-b-vol"></span><span class="sc-b-pwr"></span><span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:16px;border-radius:42px;background:#F5F0E8;">
+                <img src="images/mockup/screen-dashboard.png" alt="Customer dashboard — David Okafor" />
+              </div>
+            </div>
+            <div class="sc-shadow" style="bottom:-30px;"></div>
+          </div>
+
+        </div>
+        <div class="sc-hint">SCROLL
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Page 3: Calendar / Needs Attention (left) + WhatsApp templates (right) -->
+      <div class="showcase-page">
+        <div class="showcase-canvas" data-cw="950" data-ch="930" style="width:950px;height:930px;">
+
+          <div class="sc-frame" style="left:80px;top:44px;transform:rotate(-3deg);transform-origin:bottom center;z-index:1;">
+            <div class="sc-device" style="width:390px;height:822px;border-radius:54px;">
+              <span class="sc-b-vol"></span><span class="sc-b-pwr"></span><span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:14px;border-radius:42px;background:#F5F0E8;">
+                <img src="images/mockup/screen-calendar.png" alt="Calendar — Needs Attention panel" />
+              </div>
+            </div>
+            <div class="sc-shadow"></div>
+          </div>
+
+          <div class="sc-frame" style="left:448px;top:28px;transform:rotate(3deg);transform-origin:bottom center;z-index:2;">
+            <div class="sc-device" style="width:436px;height:830px;border-radius:56px;">
+              <span class="sc-b-vol"></span><span class="sc-b-pwr"></span><span class="sc-cam"></span>
+              <div class="sc-screen" style="inset:16px;border-radius:42px;background:#ffffff;">
+                <img src="images/mockup/screen-whatsapp.png" alt="WhatsApp message templates" />
+              </div>
+            </div>
+            <div class="sc-shadow" style="bottom:-30px;"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /.app-showcase-scroller -->
+  </section>
+
   <!-- ===== FREE GUIDES ===== -->
   <section class="guides-section" id="free-guides">
     <div class="container">
-      <p class="section-eyebrow">Completely Free</p>
+      <p class="section-eyebrow">Completely <span class="script-gold-sm">Free</span></p>
       <h2 class="section-title">Guides that help you win more jobs</h2>
       <p class="section-sub">Short, practical guides written for UK tradespeople. Read them on your phone, save them, share them.</p>
 
@@ -421,6 +515,21 @@
       <p class="footer-copy">&copy; 2026 Lexi Handles It. Built for UK tradespeople. &nbsp;|&nbsp; <a href="#" style="color:inherit">Privacy Policy</a> &nbsp;|&nbsp; <a href="#" style="color:inherit">Terms</a></p>
     </div>
   </footer>
+
+  <script>
+    /* ── App showcase canvas scaling ── */
+    function fitShowcaseCanvases() {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      document.querySelectorAll('.showcase-canvas').forEach(c => {
+        const cw = +c.dataset.cw, ch = +c.dataset.ch;
+        const s = Math.min(vw / cw, vh / ch);
+        c.style.transform = `translate(-50%,-50%) scale(${s})`;
+      });
+    }
+    window.addEventListener('resize', fitShowcaseCanvases);
+    window.addEventListener('orientationchange', fitShowcaseCanvases);
+    fitShowcaseCanvases();
+  </script>
 
 </body>
 </html>

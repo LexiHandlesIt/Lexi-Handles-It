@@ -52,6 +52,16 @@ h3 { font-size: clamp(1.1rem, 3vw, 1.4rem); }
   font-size: 1.3em;
   line-height: 1;
 }
+/* Smaller version for tight spaces — nav buttons, eyebrows */
+.script-gold-sm {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 700;
+  color: #C9A030;
+  font-size: 1.1em;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
 
 /* ── Buttons ── */
 .btn {
@@ -109,17 +119,26 @@ section { padding: 64px 0; }
   gap: 6px;
   flex-shrink: 0;
 }
-.nav-logo-img  { height: 52px; width: auto; }
+.nav-logo-img  { height: 90px; width: auto; }
 .nav-strap-img { height: 38px; width: auto; }
-.nav-actions { display: flex; align-items: center; gap: 10px; }
+.nav-actions { display: flex; align-items: center; gap: 10px; width: 100%; }
 .nav-actions .btn { padding: 10px 20px; font-size: 0.9rem; }
+.nav-btn-logon { margin-left: auto; }
 
-@media (max-width: 600px) {
+@media (max-width: 680px) {
+  .nav-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
   .nav-logo-img  { height: 28px; }
   .nav-strap-img { height: 30px; }
+  .nav-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
   .nav-actions .btn { padding: 7px 10px; font-size: 0.78rem; }
-  /* Hide "Free Templates" link on small screens — "Free Guides" covers the freebie nav */
-  .nav-actions .btn:nth-child(2) { display: none; }
 }
 
 /* ── HERO ── */
@@ -146,7 +165,7 @@ section { padding: 64px 0; }
   top: 50%;
   left: 4%;
   transform: translateY(-50%);
-  width: 34%;        /* fits comfortably in the left cream area */
+  width: 34%;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -298,7 +317,25 @@ section { padding: 64px 0; }
   margin-bottom: 10px;
   text-align: center;
 }
+/* Heading-style label — matches the h1 "Hi, I'm Lexi" colour and weight */
+.section-heading-label {
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--walnut-d);
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
 .section-title { text-align: center; margin-bottom: 10px; }
+.templates-section .section-title {
+  color: var(--sage) !important;
+  font-weight: 500 !important;
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem) !important;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
 .section-sub {
   text-align: center;
   color: var(--mid);
@@ -539,8 +576,8 @@ section { padding: 64px 0; }
   margin: 0 auto;
   text-align: center;
 }
-.capture-box h3 { margin-bottom: 8px; }
-.capture-box p  { color: var(--mid); font-size: 0.9rem; margin-bottom: 20px; }
+.capture-box h3 { margin-bottom: 20px; font-size: clamp(1rem, 2.5vw, 1.3rem); line-height: 1.4; }
+.capture-box .btn { display: flex; }
 .capture-form {
   display: flex;
   flex-direction: column;
@@ -566,8 +603,141 @@ section { padding: 64px 0; }
   margin-top: 8px;
 }
 
+/* ── LEXI APP BRIDGE ── */
+.app-bridge-section {
+  background: var(--cream);
+  padding: 48px 0 0;
+  text-align: center;
+}
+.app-bridge-section .section-title {
+  color: var(--sage) !important;
+  font-weight: 500 !important;
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem) !important;
+  line-height: 1.6;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── App Showcase — 3-page device mockup ── */
+.app-showcase-scroller {
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 36px;
+}
+.showcase-page {
+  height: 100dvh;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(120% 80% at 50% 4%, #FFFDFA 0%, #FAF8F5 58%, #F2EEE6 100%);
+}
+.showcase-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+}
+
+/* Device frame */
+.sc-frame { position: absolute; }
+.sc-device {
+  position: relative;
+  background: linear-gradient(150deg, #3d3d3f 0%, #19191b 46%, #0b0b0c 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.12),
+    inset 0 3px 4px rgba(255,255,255,.20),
+    inset 0 -4px 10px rgba(0,0,0,.6),
+    0 16px 30px -12px rgba(35,26,12,.36),
+    0 38px 66px -22px rgba(35,26,12,.48),
+    0 66px 100px -44px rgba(35,26,12,.34);
+}
+.sc-screen {
+  position: absolute;
+  overflow: hidden;
+  background: #fff;
+}
+.sc-screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.sc-cam {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #070708;
+  box-shadow: inset 0 0 0 1px rgba(120,150,180,.25);
+}
+.sc-tablet .sc-cam {
+  top: 50%;
+  left: 9px;
+  transform: translateY(-50%);
+}
+.sc-b-vol,
+.sc-b-pwr {
+  position: absolute;
+  background: #161618;
+  border-radius: 2px;
+}
+.sc-b-vol {
+  left: -3px;
+  width: 3px;
+  height: 54px;
+  top: 150px;
+  box-shadow: 0 78px 0 #161618, 0 146px 0 #161618;
+}
+.sc-b-pwr {
+  right: -3px;
+  width: 3px;
+  height: 92px;
+  top: 210px;
+}
+.sc-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -30px;
+  transform: translateX(-50%);
+  width: 86%;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(45,33,16,.32), rgba(45,33,16,0) 72%);
+  filter: blur(9px);
+  z-index: -2;
+}
+
+/* Scroll hint */
+.sc-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font: 600 13px/1 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: .4px;
+  color: #9a9486;
+  opacity: .9;
+  animation: sc-bob 1.8s ease-in-out infinite;
+}
+.sc-hint svg { width: 22px; height: 22px; }
+@keyframes sc-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%       { transform: translate(-50%, 7px); }
+}
+
 /* ── FREE GUIDES ── */
-.guides-section { background: var(--cream); }
+.guides-section { background: var(--white); }
 
 .guides-block {
   margin-top: 48px;
