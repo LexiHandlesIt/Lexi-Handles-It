@@ -1766,11 +1766,22 @@ section { padding: 64px 0; }
 }
 /* Hero tablet mockup image */
 .app-journey-panel .hero-tablet-img {
-  width: calc(100% + 40px) !important;
-  max-width: calc(100% + 40px) !important;
+  width: 100% !important;
+  max-width: 100% !important;
   height: auto;
   display: block;
-  margin-left: -20px;
+}
+@media (max-width: 720px) {
+  .app-journey-panel .hero-tablet-img {
+    width: calc(100% + 40px) !important;
+    max-width: calc(100% + 40px) !important;
+    margin-left: -20px;
+  }
+  .app-journey-panel div:has(.hero-tablet-img) {
+    overflow: hidden;
+    padding: 24px 0 0 !important;
+    margin: 0 !important;
+  }
 }
 
 /* Niche fit strip */
