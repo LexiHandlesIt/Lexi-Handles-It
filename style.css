@@ -2495,3 +2495,9 @@ section { padding: 64px 0; }
   background: transparent !important;
   border-radius: 0 !important;
 }
+
+/* Emphasise Step 3 chase explanation */
+.step-card .step-chase-copy {
+  font-size: clamp(1rem, 1.8vw, 1.18rem) !important;
+  line-height: 1.55 !important;
+}
