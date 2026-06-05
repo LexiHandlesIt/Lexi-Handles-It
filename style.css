@@ -3202,3 +3202,99 @@ button.lesson-series-card {
     font-size: 0.72rem !important;
   }
 }
+/* Keep hero feature cards to two title lines and two explainer lines */
+.hero-feature-grid .hero-feature strong,
+.hero-feature-grid .hero-feature small {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hero-feature-grid .hero-feature strong {
+  -webkit-line-clamp: 2;
+}
+.hero-feature-grid .hero-feature small {
+  -webkit-line-clamp: 2;
+}
+/* Left-align the estimate intro above the tablet */
+.app-estimate-intro {
+  text-align: left !important;
+  padding-left: clamp(18px, 5vw, 54px) !important;
+  padding-right: clamp(18px, 5vw, 54px) !important;
+}
+.app-estimate-intro p {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+/* Add breathing room above the estimate intro */
+.app-estimate-intro {
+  padding-top: clamp(30px, 6vw, 56px) !important;
+}
+/* Left-aligned Lexi Lessons intro */
+.guides-section .container > .lessons-title {
+  text-align: left !important;
+  color: var(--walnut) !important;
+  font-size: clamp(1.45rem, 3vw, 2rem) !important;
+  margin: 0 0 10px !important;
+}
+.guides-section .lessons-lead,
+.guides-section .lessons-kicker {
+  text-align: left !important;
+  color: var(--sage) !important;
+  font-size: clamp(1.05rem, 2vw, 1.25rem) !important;
+  font-weight: 800 !important;
+  margin: 0 0 10px !important;
+}
+.guides-section .section-sub {
+  text-align: left !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.guides-section .lessons-kicker {
+  margin-top: 18px !important;
+}
+/* Coming soon mailing-list banner */
+.launch-banner {
+  background: var(--charcoal);
+  color: var(--white);
+  border-bottom: 1px solid rgba(255,255,255,0.16);
+}
+.launch-banner-inner {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  font-size: clamp(0.9rem, 1.6vw, 1rem);
+  line-height: 1.35;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.launch-banner-inner strong {
+  color: #C9A030;
+}
+.launch-banner-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  color: var(--walnut);
+  font-weight: 900;
+  text-decoration: none;
+}
+.launch-banner-btn:hover {
+  background: var(--white);
+}
+@media (max-width: 560px) {
+  .launch-banner-inner {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .launch-banner-btn {
+    width: min(100%, 240px);
+  }
+}
