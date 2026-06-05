@@ -3298,3 +3298,275 @@ button.lesson-series-card {
     width: min(100%, 240px);
   }
 }
+/* Light connected How Lexi Handles It panel */
+.app-how-block {
+  width: min(calc(100% - 32px), 960px);
+  margin: clamp(22px, 5vw, 42px) auto clamp(28px, 5vw, 48px);
+  padding: clamp(22px, 4vw, 34px) clamp(12px, 3vw, 22px) clamp(18px, 4vw, 28px) !important;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  text-align: left !important;
+}
+.app-how-block .section-eyebrow {
+  color: var(--sage) !important;
+  text-align: left !important;
+  margin-bottom: 8px;
+}
+.app-how-block .section-title {
+  color: var(--walnut) !important;
+  text-align: left !important;
+  max-width: 30rem;
+  margin: 0 0 8px !important;
+  font-size: clamp(1.45rem, 3vw, 2rem) !important;
+  line-height: 1.18 !important;
+}
+.app-how-block .section-sub {
+  color: var(--charcoal) !important;
+  text-align: left !important;
+  max-width: 42rem;
+  margin: 0 0 clamp(18px, 4vw, 28px) !important;
+  font-size: clamp(0.98rem, 1.8vw, 1.08rem) !important;
+  line-height: 1.55 !important;
+}
+.app-how-block .steps-row {
+  margin-top: 0 !important;
+  gap: 16px !important;
+}
+.app-how-block .step-card {
+  background: var(--white);
+}
+@media (max-width: 520px) {
+  .app-how-block {
+    width: calc(100% - 18px);
+    padding: 18px 8px 12px !important;
+  }
+}
+/* Give the How panel mockups more room again */
+.app-how-block {
+  width: min(calc(100% - 12px), 1080px) !important;
+  padding-left: clamp(8px, 2vw, 14px) !important;
+  padding-right: clamp(8px, 2vw, 14px) !important;
+}
+.app-how-block .step-card {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+@media (max-width: 520px) {
+  .app-how-block {
+    width: calc(100% - 8px) !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+}
+/* Larger labels under step mockups */
+.step-img-label {
+  font-size: clamp(0.98rem, 1.8vw, 1.12rem) !important;
+  line-height: 1.25 !important;
+}
+/* Compact the gap between step headings and mockups */
+.app-how-block .step-card {
+  padding-top: 8px !important;
+}
+.app-how-block .step-heading-row {
+  margin-bottom: 0 !important;
+}
+.app-how-block .step-card:has(.step-heading-row) .step-mockup-pair,
+.app-how-block .step-card:has(.step-heading-row-long) .step-mockup-pair {
+  margin-top: 0 !important;
+}
+.app-how-block .step-mockup-pair {
+  margin-top: 0 !important;
+}
+@media (max-width: 640px) {
+  .app-how-block .step-card {
+    padding-top: 7px !important;
+  }
+}
+/* Desktop-only template clipboard zoom for clearer preview */
+@media (min-width: 769px) and (hover: hover) {
+  .fb-card {
+    position: relative;
+    z-index: 1;
+  }
+  .fb-card .fb-frame {
+    transform-origin: center top;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  .fb-card:hover,
+  .fb-card:focus-visible {
+    z-index: 8;
+  }
+  .fb-card:hover .fb-frame,
+  .fb-card:focus-visible .fb-frame {
+    transform: scale(1.18);
+  }
+}
+/* Full-page template clipboard preview */
+.template-preview-modal[hidden] {
+  display: none;
+}
+.template-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(20, 16, 12, 0.78);
+}
+.template-preview-backdrop {
+  position: absolute;
+  inset: 0;
+}
+.template-preview-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--cream);
+}
+.template-preview-toolbar {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--charcoal);
+  color: var(--white);
+}
+.template-preview-toolbar h3 {
+  color: var(--white);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.2;
+  margin: 0;
+  text-align: center;
+}
+.template-preview-control,
+.template-preview-close,
+.template-preview-download {
+  min-height: 36px;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.template-preview-download {
+  background: var(--cream);
+  color: var(--walnut);
+  border-color: var(--cream);
+}
+.template-preview-stage {
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(16px, 3vw, 30px);
+}
+.template-preview-clipboard {
+  position: relative;
+  width: min(94vw, 760px);
+  min-height: calc(100vh - 108px);
+  padding: clamp(52px, 7vw, 82px) clamp(18px, 3vw, 34px) clamp(20px, 3vw, 34px);
+  display: flex;
+  justify-content: center;
+  border-radius: 18px;
+  background:
+    linear-gradient(115deg, rgba(255,245,225,0) 30%, rgba(255,247,230,.42) 45%, rgba(255,248,232,0) 58%),
+    linear-gradient(90deg, rgba(255,255,255,.08), rgba(0,0,0,.12)),
+    #8a5d32;
+  box-shadow: 0 34px 70px rgba(20, 16, 12, 0.34);
+}
+.template-preview-clipboard .fb-clip {
+  top: clamp(12px, 2vw, 22px);
+  width: clamp(90px, 14vw, 138px);
+  height: clamp(50px, 8vw, 74px);
+}
+.template-preview-doc {
+  width: min(100%, 620px);
+  background: var(--white);
+  box-shadow: 0 24px 44px -24px rgba(44,42,38,.42), 0 3px 10px rgba(44,42,38,.08);
+}
+.template-preview-doc img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 768px) {
+  .template-preview-modal {
+    display: none !important;
+  }
+}
+/* Mobile template CTA prompt: no direct downloads */
+@media (max-width: 768px) {
+  .template-preview-modal[hidden] {
+    display: none !important;
+  }
+  .template-preview-modal:not([hidden]) {
+    display: block !important;
+  }
+  .template-preview-panel {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    height: auto;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(20, 16, 12, 0.36);
+  }
+  .template-preview-toolbar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 18px;
+    background: var(--cream);
+    color: var(--walnut);
+  }
+  .template-preview-toolbar h3 {
+    color: var(--walnut);
+    font-size: 1.2rem;
+  }
+  .template-preview-control {
+    display: none;
+  }
+  .template-preview-download {
+    width: 100%;
+    background: var(--walnut);
+    color: var(--white);
+    border-color: var(--walnut);
+  }
+  .template-preview-close {
+    width: 100%;
+    background: var(--white);
+    color: var(--walnut);
+    border-color: var(--border);
+  }
+  .template-preview-stage {
+    display: none;
+  }
+}
+/* Brand green read-guide buttons for Guide 1-5 */
+.quote-journey-modal .journey-card:nth-child(-n+5) .dl-guide {
+  background: var(--sage) !important;
+  color: var(--white) !important;
+}
+.quote-journey-modal .journey-card:nth-child(-n+5) .dl-guide:hover {
+  background: var(--sage-d) !important;
+}
+/* Clipboard cards are buttons, never direct download links */
+button.fb-card {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  width: 100%;
+  padding: 0;
+  text-align: center;
+}
