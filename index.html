@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260604-pricing-order">
+  <link rel="stylesheet" href="style.css?v=20260605-eight-feature-grid">
 </head>
 <body>
 
@@ -45,6 +45,7 @@
           <div class="hero-feature hero-feature-walnut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h10M9 12h10M9 19h10M4 5h.01M4 12h.01M4 19h.01"/></svg><span><strong>Track every job</strong><small>Keep customers and jobs organised in one place.</small></span></div>
           <div class="hero-feature hero-feature-gold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><span><strong>See who owes what</strong><small>Know what is paid and outstanding at a glance.</small></span></div>
           <div class="hero-feature hero-feature-sage"><span class="hero-pound-icon" aria-hidden="true">&pound;</span><span><strong>Chase payments easily</strong><small>Ready-made messages make following up less awkward.</small></span></div>
+          <div class="hero-feature hero-feature-gold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M12 17v4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M3 12h4M17 12h4M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/><circle cx="12" cy="12" r="3"/></svg><span><strong>Quiet Season</strong><small>Pause for up to 6 months and keep your tools, without creating new quotes or estimates.</small></span></div>
         </div>
 
       </div>
@@ -300,16 +301,85 @@
   <!-- ===== FREE GUIDES ===== -->
   <section class="guides-section" id="free-guides">
     <div class="container">
-      <p class="section-eyebrow">Lexi's Lessons <span class="script-gold-sm">Completely Free</span></p>
+      <p class="section-eyebrow">Bonus <span class="script-gold-sm">Free</span> guides written by Lexi</p>
       <h2 class="section-title">Want to Quote Better and Win More Work?</h2>
       <p class="section-sub">Nobody teaches you how to price, quote, follow up or win work when you first go out on your own. These free guides do. Read them or listen as short podcasts.</p>
+      <p class="lessons-kicker">Ready to get schooled by Lexi?</p>
 
-      <!-- The Quote Journey - Guides 1-6 -->
+      <div class="lesson-library-grid" aria-label="Lexi lesson series library">
+        <button type="button" class="lesson-series-card lesson-series-card-live" data-modal-target="quote-journey-modal">
+          <span class="lesson-series-num">Guide 1</span>
+          <strong>Acing the Quote</strong>
+          <small>Price properly, quote confidently, follow up and win more of the right jobs.</small>
+          <span class="lesson-series-action">Open series</span>
+        </button>
+        <div class="lesson-series-card lesson-series-card-soon">
+          <span class="lesson-series-num">Guide 2</span>
+          <strong>Writing a Business Plan</strong>
+          <small>Get your goals, money and next steps out of your head and onto paper.</small>
+          <span class="lesson-series-status">Coming soon</span>
+        </div>
+        <div class="lesson-series-card lesson-series-card-soon">
+          <span class="lesson-series-num">Guide 3</span>
+          <strong>Sole Trader or Limited Company?</strong>
+          <small>Understand the setup choices before you pick the wrong lane.</small>
+          <span class="lesson-series-status">Coming soon</span>
+        </div>
+        <div class="lesson-series-card lesson-series-card-soon">
+          <span class="lesson-series-num">Guide 4</span>
+          <strong>Running the Business Side</strong>
+          <small>Records, tax, VAT basics, insurance and the grown-up bits nobody explains.</small>
+          <span class="lesson-series-status">Coming soon</span>
+        </div>
+        <div class="lesson-series-card lesson-series-card-soon">
+          <span class="lesson-series-num">Guide 5</span>
+          <strong>Marketing Your Trade</strong>
+          <small>Look credible, get found locally and turn enquiries into booked jobs.</small>
+          <span class="lesson-series-status">Coming soon</span>
+        </div>
+        <div class="lesson-series-card lesson-series-card-soon">
+          <span class="lesson-series-num">Guide 6</span>
+          <strong>Getting Paid Properly</strong>
+          <small>Deposits, invoices, payment terms and follow-ups that keep cash moving.</small>
+          <span class="lesson-series-status">Coming soon</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-logo">
+          <img src="1 Lexi Handles It Transparent.png" alt="Lexi Handles It" class="footer-logo-img" onerror="this.style.display='none'">
+          <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="footer-strap-img" onerror="this.style.display='none'">
+        </div>
+        <div class="footer-links">
+          <a href="#free-templates">Free Templates</a>
+          <a href="#pricing">Pricing</a>
+          <a href="YOUR_APP_URL" target="_blank">Try the App</a>
+          <a href="mailto:hello@lexihandlesit.com">Contact</a>
+        </div>
+      </div>
+      <p class="footer-copy">&copy; 2026 Lexi Handles It, a subsidiary business of The Crafter's Forge Ltd. &nbsp;|&nbsp; <a href="#" style="color:inherit">Privacy Policy</a> &nbsp;|&nbsp; <a href="#" style="color:inherit">Terms</a></p>
+    </div>
+  </footer>
+
+
+
+  <!-- Quote Journey lesson series modal -->
+  <div class="guide-modal quote-journey-modal" id="quote-journey-modal" hidden>
+    <div class="guide-modal-backdrop" data-modal-close></div>
+    <div class="guide-modal-panel guide-modal-panel-wide" role="dialog" aria-modal="true" aria-labelledby="quote-journey-title">
+      <button type="button" class="guide-modal-close" data-modal-close aria-label="Close Acing the Quote guide series">Close</button>
+      <span class="guides-badge">Guide 1</span>
+      <h3 id="quote-journey-title">Acing the Quote</h3>
+      <p>Six lessons to help you handle the quote journey from first enquiry to winning the job.</p>      <!-- Acing the Quote - Guides 1-6 -->
       <div class="guides-block">
         <div class="guides-block-header">
           <span class="guides-badge">Step-by-Step Series</span>
-          <h3>The Quote Journey</h3>
-          <p>Six guides to help you handle the quote journey, stand out from the competition and then choose trade-specific advice when you need it.</p>
+          <h3>Acing the Quote</h3>
+          <p>Work through the lessons in order, or jump to the bit you need today.</p>
         </div>
         <div class="journey-grid">
 
@@ -356,33 +426,8 @@
           </div>
 
         </div>
-      </div>
-    </div>
-  </section>
-
-
-
-  <!-- ===== FOOTER ===== -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-logo">
-          <img src="1 Lexi Handles It Transparent.png" alt="Lexi Handles It" class="footer-logo-img" onerror="this.style.display='none'">
-          <img src="2 So you dont have to transparent.png" alt="So you don't have to" class="footer-strap-img" onerror="this.style.display='none'">
-        </div>
-        <div class="footer-links">
-          <a href="#free-templates">Free Templates</a>
-          <a href="#pricing">Pricing</a>
-          <a href="YOUR_APP_URL" target="_blank">Try the App</a>
-          <a href="mailto:hello@lexihandlesit.com">Contact</a>
-        </div>
-      </div>
-      <p class="footer-copy">&copy; 2026 Lexi Handles It, a subsidiary business of The Crafter's Forge Ltd. &nbsp;|&nbsp; <a href="#" style="color:inherit">Privacy Policy</a> &nbsp;|&nbsp; <a href="#" style="color:inherit">Terms</a></p>
-    </div>
-  </footer>
-
-
-
+      </div>    </div>
+  </div>
   <!-- Trade-specific Guide 5 modal -->
   <div class="guide-modal" id="trade-guides-modal" hidden>
     <div class="guide-modal-backdrop" data-modal-close></div>
@@ -427,32 +472,38 @@
     window.addEventListener('orientationchange', fitShowcaseCanvases);
     fitShowcaseCanvases();
 
-    /* Trade-specific guide modal */
-    const guideModal = document.getElementById('trade-guides-modal');
-    const guideModalOpeners = document.querySelectorAll('[data-modal-target="trade-guides-modal"]');
+    /* Guide modals */
+    const guideModalOpeners = document.querySelectorAll('[data-modal-target]');
     const guideModalClosers = document.querySelectorAll('[data-modal-close]');
 
-    function openGuideModal() {
-      guideModal.hidden = false;
+    function openGuideModal(modal) {
+      if (!modal) return;
+      modal.hidden = false;
       document.body.style.overflow = 'hidden';
     }
 
-    function closeGuideModal() {
-      guideModal.hidden = true;
+    function closeGuideModal(modal) {
+      if (!modal) return;
+      modal.hidden = true;
       document.body.style.overflow = '';
     }
 
+    function closeOpenGuideModal() {
+      const openModal = document.querySelector('.guide-modal:not([hidden])');
+      closeGuideModal(openModal);
+    }
+
     guideModalOpeners.forEach(button => {
-      button.addEventListener('click', openGuideModal);
+      button.addEventListener('click', () => openGuideModal(document.getElementById(button.dataset.modalTarget)));
     });
 
     guideModalClosers.forEach(button => {
-      button.addEventListener('click', closeGuideModal);
+      button.addEventListener('click', () => closeGuideModal(button.closest('.guide-modal')));
     });
 
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && !guideModal.hidden) {
-        closeGuideModal();
+      if (event.key === 'Escape') {
+        closeOpenGuideModal();
       }
     });
     /* Podcast mini player */

@@ -3035,3 +3035,170 @@ section { padding: 64px 0; }
 .step-card:has(.step-heading-row-long) .step-mockup-pair {
   margin-top: 6px;
 }
+/* Lexi Lessons library */
+.lessons-kicker {
+  margin: 18px auto 0;
+  color: var(--walnut);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  font-weight: 800;
+  text-align: center;
+}
+.lesson-library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: clamp(26px, 5vw, 42px);
+}
+.lesson-series-card {
+  min-height: 210px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--charcoal);
+}
+button.lesson-series-card {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+}
+.lesson-series-card-live {
+  border-color: var(--walnut);
+  box-shadow: var(--shadow);
+}
+.lesson-series-card:hover {
+  transform: translateY(-2px);
+}
+.lesson-series-num {
+  align-self: flex-start;
+  background: var(--walnut);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.lesson-series-card strong {
+  color: var(--walnut-d);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.2;
+}
+.lesson-series-card small {
+  color: var(--mid);
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  line-height: 1.5;
+}
+.lesson-series-action,
+.lesson-series-status {
+  margin-top: auto;
+  font-weight: 900;
+  color: var(--sage);
+}
+.lesson-series-card-soon {
+  opacity: 0.78;
+}
+.guide-modal-panel-wide {
+  width: min(100%, 980px);
+}
+.quote-journey-modal .guides-block {
+  margin-top: 24px;
+}
+.quote-journey-modal .journey-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Bigger, cleaner hero feature boxes */
+.hero-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+}
+.hero-feature {
+  grid-template-columns: 31px minmax(0, 1fr) !important;
+  padding: 11px 12px !important;
+}
+.hero-feature strong {
+  font-size: clamp(0.86rem, 1.18vw, 1rem) !important;
+  line-height: 1.18 !important;
+}
+.hero-feature small {
+  font-size: clamp(0.76rem, 1vw, 0.9rem) !important;
+  line-height: 1.35 !important;
+}
+.hero-feature svg,
+.hero-pound-icon {
+  width: 24px !important;
+  height: 24px !important;
+}
+@media (max-width: 780px) {
+  .lesson-library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .quote-journey-modal .journey-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .lesson-library-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  .hero-feature {
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    padding: 9px 8px !important;
+  }
+  .hero-feature strong {
+    font-size: 0.78rem !important;
+  }
+  .hero-feature small {
+    font-size: 0.68rem !important;
+  }
+  .hero-feature svg,
+  .hero-pound-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+/* Final eight-feature grid: two neat columns, no spanning cards */
+.hero-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+}
+.hero-feature-grid .hero-feature,
+.hero-feature-grid .hero-feature-documents,
+.hero-feature-grid .hero-feature:last-child {
+  grid-column: auto !important;
+  min-height: 76px;
+}
+.hero-feature-grid .hero-feature {
+  align-content: start;
+}
+.hero-feature-grid .hero-feature strong {
+  font-size: clamp(0.92rem, 1.25vw, 1.05rem) !important;
+}
+.hero-feature-grid .hero-feature small {
+  font-size: clamp(0.8rem, 1.05vw, 0.92rem) !important;
+}
+@media (max-width: 520px) {
+  .hero-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .hero-feature-grid .hero-feature,
+  .hero-feature-grid .hero-feature-documents,
+  .hero-feature-grid .hero-feature:last-child {
+    grid-column: auto !important;
+    min-height: 86px;
+  }
+  .hero-feature-grid .hero-feature strong {
+    font-size: 0.82rem !important;
+  }
+  .hero-feature-grid .hero-feature small {
+    font-size: 0.72rem !important;
+  }
+}
