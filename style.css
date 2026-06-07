@@ -3570,3 +3570,19 @@ button.fb-card {
   padding: 0;
   text-align: center;
 }
+/* Website app doorway nav */
+.nav-actions .nav-btn-app {
+  margin-left: auto;
+  background: var(--sage) !important;
+  border-color: var(--sage) !important;
+  color: var(--white) !important;
+}
+.nav-actions .nav-btn-app:hover {
+  background: var(--sage-d) !important;
+  border-color: var(--sage-d) !important;
+}
+@media (max-width: 680px) {
+  .nav-actions .nav-btn-app {
+    margin-left: 0;
+  }
+}
